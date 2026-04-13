@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Tidy11-Restore.ps1 — standalone snapshot restoration.
+    Tidy11-Restore.ps1 - standalone snapshot restoration.
 
 .DESCRIPTION
     Self-contained, no module dependency. Reads a Tidy11 snapshot folder
@@ -66,7 +66,7 @@ if (-not (Test-Path $SnapshotPath)) {
 
 $manifestFile = Join-Path $SnapshotPath 'manifest.json'
 if (-not (Test-Path $manifestFile)) {
-    Write-FAIL "No manifest.json in $SnapshotPath — does not look like a Tidy11 snapshot."
+    Write-FAIL "No manifest.json in $SnapshotPath - does not look like a Tidy11 snapshot."
     exit 1
 }
 

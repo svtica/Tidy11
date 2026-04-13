@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Tidy11-Remediate.ps1 — Intune Proactive Remediation remediation script.
+    Tidy11-Remediate.ps1 - Intune Proactive Remediation remediation script.
 
 .DESCRIPTION
-    Self-contained (no module dependency — Intune PR scripts are shipped as a
+    Self-contained (no module dependency - Intune PR scripts are shipped as a
     single file). Re-applies the Tidy11 DISABLE baseline non-interactively.
 
     Deployed via: Intune admin center -> Devices -> Scripts and remediations ->

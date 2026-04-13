@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Tidy11.ps1 — one-click WPF tool to disable Copilot/AI, telemetry, ads,
+    Tidy11.ps1 - one-click WPF tool to disable Copilot/AI, telemetry, ads,
     and bloat on Windows 11 and Microsoft 365. Restores privacy and performance.
 
 .DESCRIPTION
@@ -61,7 +61,7 @@ Import-Module $modulePath -Force -DisableNameChecking
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tidy11 — Cleanup, Privacy, Copilot Removal"
+        Title="Tidy11 - Cleanup, Privacy, Copilot Removal"
         Height="900" Width="900"
         WindowStartupLocation="CenterScreen"
         Background="#1a1a1a">
@@ -105,12 +105,12 @@ Import-Module $modulePath -Force -DisableNameChecking
 
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="4,0,0,8">
             <TextBlock Text="Tidy11" FontSize="22" FontWeight="Bold" Foreground="#4fc3f7"/>
-            <TextBlock Text="  —  Cleanup | Privacy | Copilot Removal" FontSize="14" Foreground="#888" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            <TextBlock Text="  -  Cleanup | Privacy | Copilot Removal" FontSize="14" Foreground="#888" VerticalAlignment="Center" Margin="4,0,0,0"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="Copilot / AI — Windows OS">
+                <GroupBox Header="Copilot / AI - Windows OS">
                     <StackPanel>
                         <CheckBox Name="cbWinCopilot"       Content="Windows Copilot (taskbar, Win+C, hardware key)" IsChecked="True"/>
                         <CheckBox Name="cbRecall"           Content="Recall + snapshots" IsChecked="True"/>
@@ -123,7 +123,7 @@ Import-Module $modulePath -Force -DisableNameChecking
                     </StackPanel>
                 </GroupBox>
 
-                <GroupBox Header="Copilot / AI — Apps">
+                <GroupBox Header="Copilot / AI - Apps">
                     <StackPanel>
                         <CheckBox Name="cbPaint"   Content="Paint AI (Cocreator, Generative Fill/Erase)" IsChecked="True"/>
                         <CheckBox Name="cbPhotos"  Content="Photos AI + image categorization" IsChecked="True"/>
@@ -138,8 +138,8 @@ Import-Module $modulePath -Force -DisableNameChecking
                     <StackPanel>
                         <CheckBox Name="cbTelemetry"    Content="Telemetry (DiagTrack, tasks, firewall blocks)" IsChecked="True"/>
                         <CheckBox Name="cbAds"          Content="Ads / Recommendations / Spotlight" IsChecked="True"/>
-                        <CheckBox Name="cbMSA"          Content="Block Microsoft Account nudges (optional — off for enterprise MSA use)" IsChecked="False"/>
-                        <CheckBox Name="cbMSAStrict"    Content="    └ Strict MSA block (value=3 — may break Store/Teams/OneDrive personal sign-in)" IsChecked="False" Margin="24,3,8,3"/>
+                        <CheckBox Name="cbMSA"          Content="Block Microsoft Account nudges (optional - off for enterprise MSA use)" IsChecked="False"/>
+                        <CheckBox Name="cbMSAStrict"    Content="    |_ Strict MSA block (value=3 - may break Store/Teams/OneDrive personal sign-in)" IsChecked="False" Margin="24,3,8,3"/>
                         <CheckBox Name="cbActLoc"      Content="Activity History + global Location" IsChecked="True"/>
                     </StackPanel>
                 </GroupBox>
@@ -148,9 +148,9 @@ Import-Module $modulePath -Force -DisableNameChecking
                     <StackPanel>
                         <TextBlock Text="Method:" FontWeight="Bold" Margin="8,4,8,2"/>
                         <RadioButton Name="rbMethodSkip"     GroupName="classicMethod" Content="Skip (don't install anything)" IsChecked="True" Foreground="#e0e0e0" Margin="16,2,8,2"/>
-                        <RadioButton Name="rbMethodWinget"   GroupName="classicMethod" Content="Winget alternatives — Notepad++ / Paint.NET / ShareX / IrfanView" Foreground="#e0e0e0" Margin="16,2,8,2"/>
-                        <RadioButton Name="rbMethodNative"   GroupName="classicMethod" Content="Native (Microsoft sources only — Notepad, Photo Viewer, Photos Legacy)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
-                        <RadioButton Name="rbMethodRedistOn"   GroupName="classicMethod" Content="Source Redist Online (opt-in — includes classic MS Paint + Snipping Tool)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
+                        <RadioButton Name="rbMethodWinget"   GroupName="classicMethod" Content="Winget alternatives - Notepad++ / Paint.NET / ShareX / IrfanView" Foreground="#e0e0e0" Margin="16,2,8,2"/>
+                        <RadioButton Name="rbMethodNative"   GroupName="classicMethod" Content="Native (Microsoft sources only - Notepad, Photo Viewer, Photos Legacy)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
+                        <RadioButton Name="rbMethodRedistOn"   GroupName="classicMethod" Content="Source Redist Online (opt-in - includes classic MS Paint + Snipping Tool)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
                         <RadioButton Name="rbMethodRedistLoc"  GroupName="classicMethod" Content="Source Redist Local (use ./ClassicApps/ folder next to this script)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
 
                         <TextBlock Text="Apps to install:" FontWeight="Bold" Margin="8,8,8,2"/>
@@ -161,7 +161,7 @@ Import-Module $modulePath -Force -DisableNameChecking
                         <CheckBox Name="cbAppPhotosLeg"   Content="Photos Legacy (from Microsoft Store)"/>
 
                         <TextBlock TextWrapping="Wrap" Margin="8,6,8,2" FontSize="10" Foreground="#888"
-                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Source Redist options install true Win10 binaries but redistribute Microsoft copyrights — use at your discretion."/>
+                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Source Redist options install true Win10 binaries but redistribute Microsoft copyrights - use at your discretion."/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
@@ -197,9 +197,9 @@ Import-Module $modulePath -Force -DisableNameChecking
 
                 <GroupBox Header="Presets">
                     <StackPanel>
-                        <Button Name="btnPresetSafe"      Content="SAFE     — AI / telemetry / ads (recommended)"     HorizontalAlignment="Stretch"/>
-                        <Button Name="btnPresetExtended"  Content="EXTENDED — SAFE + Xbox + Game DVR"                  HorizontalAlignment="Stretch"/>
-                        <Button Name="btnPresetFull"      Content="FULL     — everything including Appx removal"      HorizontalAlignment="Stretch" Background="#4a0000"/>
+                        <Button Name="btnPresetSafe"      Content="SAFE     - AI / telemetry / ads (recommended)"     HorizontalAlignment="Stretch"/>
+                        <Button Name="btnPresetExtended"  Content="EXTENDED - SAFE + Xbox + Game DVR"                  HorizontalAlignment="Stretch"/>
+                        <Button Name="btnPresetFull"      Content="FULL     - everything including Appx removal"      HorizontalAlignment="Stretch" Background="#4a0000"/>
                     </StackPanel>
                 </GroupBox>
 
@@ -212,7 +212,7 @@ Import-Module $modulePath -Force -DisableNameChecking
                             <Run Text="sevsec/windows-11-privacy" FontWeight="Bold"/>
                             <Run Text=" + "/>
                             <Run Text="bRootForceSec/Win11-Debloat-And-Privacy" FontWeight="Bold"/>
-                            <Run Text=". All natively ported — no network needed. Reboot after running."/>
+                            <Run Text=". All natively ported - no network needed. Reboot after running."/>
                         </TextBlock>
                     </StackPanel>
                 </GroupBox>
@@ -236,7 +236,7 @@ Import-Module $modulePath -Force -DisableNameChecking
         </GroupBox>
 
         <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Margin="6,6,0,0" FontSize="11" Foreground="#666"
-                   Text="Tidy11 — combines zoicware + sevsec + bRootForceSec. Reboot recommended after run."/>
+                   Text="Tidy11 - combines zoicware + sevsec + bRootForceSec. Reboot recommended after run."/>
     </Grid>
 </Window>
 "@
@@ -255,7 +255,7 @@ $cb = @{}
     # System cleanup
     'cbXbox','cbGameDVR','cbWidgets','cbContextMenu','cbWebSearch',
     'cbTaskbar','cbPerf','cbEdgeDebloat','cbOfficeTelem',
-    # Classic apps — method radios + app checkboxes
+    # Classic apps - method radios + app checkboxes
     'rbMethodSkip','rbMethodWinget','rbMethodNative','rbMethodRedistOn','rbMethodRedistLoc',
     'cbAppNotepad','cbAppPaint','cbAppSnip','cbAppPhoto','cbAppPhotosLeg',
     # Config / Snapshot
@@ -312,7 +312,7 @@ $cb.btnPresetFull.Add_Click({
     # require Microsoft Accounts for Store/Teams/Intune sign-in. Tick manually.
     $cb.cbMSA.IsChecked       = $false
     $cb.cbMSAStrict.IsChecked = $false
-    Write-Log 'Preset: FULL selected (everything except MSA block — tick manually if needed)'
+    Write-Log 'Preset: FULL selected (everything except MSA block - tick manually if needed)'
 })
 
 # --- config recipe save/load helpers ---
@@ -331,7 +331,7 @@ function Get-CurrentSelections {
 function Set-SelectionsFromConfig {
     param($Config)
     if (-not $Config -or -not $Config.selections) {
-        Write-Log 'Config has no selections — nothing to apply.' 'WARN'
+        Write-Log 'Config has no selections - nothing to apply.' 'WARN'
         return
     }
     $applied = 0
@@ -503,9 +503,9 @@ $cb.btnDisable.Add_Click({
     if ($cb.cbAppx.IsChecked) {
         $warn = [System.Windows.MessageBox]::Show(
             "You have ticked 'Remove Copilot/Recall Appx packages'.`n`n" +
-            "This action is IRREVERSIBLE by the snapshot system. Once removed, the packages cannot be restored by Tidy11-Restore.ps1 — you would need to reinstall them from the Microsoft Store (and some provisioned packages may not be available).`n`n" +
+            "This action is IRREVERSIBLE by the snapshot system. Once removed, the packages cannot be restored by Tidy11-Restore.ps1 - you would need to reinstall them from the Microsoft Store (and some provisioned packages may not be available).`n`n" +
             "Continue with Appx removal included?",
-            'Appx removal — irreversible', 'YesNo', 'Warning')
+            'Appx removal - irreversible', 'YesNo', 'Warning')
         if ($warn -ne 'Yes') {
             $cb.cbAppx.IsChecked = $false
             [System.Windows.MessageBox]::Show('Appx removal has been unticked. Click DISABLE again to continue with the remaining categories.', 'Cancelled', 'OK', 'Information') | Out-Null

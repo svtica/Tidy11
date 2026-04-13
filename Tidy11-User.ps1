@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Tidy11-User.ps1 — user-context companion to Tidy11-Remediate.ps1.
+    Tidy11-User.ps1 - user-context companion to Tidy11-Remediate.ps1.
 
 .DESCRIPTION
     Intune PowerShell scripts run as SYSTEM by default, which cannot write
@@ -20,7 +20,7 @@
     License: GPL-3.0-or-later
     Project: https://github.com/svtica/Tidy11
 
-    Runs as the interactive user. No admin rights required — all writes are
+    Runs as the interactive user. No admin rights required - all writes are
     to HKCU. Idempotent: safe to run on a schedule.
 
     Exit 0 = success, 1 = one or more writes failed.
@@ -43,7 +43,7 @@ function Set-Reg {
 Write-Output "=== Tidy11 user-context pass starting (user: $env:USERNAME) ==="
 
 # ============================================================================
-# 1. Copilot / Recall / AI — HKCU policies
+# 1. Copilot / Recall / AI - HKCU policies
 # ============================================================================
 Set-Reg 'HKCU:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 'DWord' 1
 Set-Reg 'HKCU:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI'      'DisableAIDataAnalysis' 'DWord' 1
@@ -63,7 +63,7 @@ try {
 } catch { $failures++ }
 
 # ============================================================================
-# 2. Microsoft 365 Office Copilot — per-user toggles
+# 2. Microsoft 365 Office Copilot - per-user toggles
 # ============================================================================
 foreach ($app in 'Word','Excel','PowerPoint','OneNote','Outlook') {
     Set-Reg "HKCU:\Software\Microsoft\Office\16.0\$app\Copilot" 'Enabled' 'DWord' 0
@@ -98,7 +98,7 @@ Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Tas
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_IrisRecommendations' 'DWord' 0
 
 # ============================================================================
-# 5. ContentDeliveryManager — per-user ads / suggestions
+# 5. ContentDeliveryManager - per-user ads / suggestions
 # ============================================================================
 $cdm = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'
 $cdmNames = @(
@@ -121,7 +121,7 @@ Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent' 'DisableWindows
 Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent' 'DisableTailoredExperiencesWithDiagnosticData' 'DWord' 1
 
 # ============================================================================
-# 6. Web search / Cortana / Bing — HKCU
+# 6. Web search / Cortana / Bing - HKCU
 # ============================================================================
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 'DWord' 0
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'CortanaConsent'    'DWord' 0
