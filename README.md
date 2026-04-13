@@ -16,18 +16,6 @@ No runtime network dependency. No telemetry of its own. No code you can't read.
 
 ---
 
-## Screenshots
-
-<!-- TODO: capture and commit real screenshots before publishing -->
-
-| Main GUI | Verification mode |
-|:---:|:---:|
-| ![Tidy11 main GUI](docs/screenshots/tidy11-main.png) | ![Verification output](docs/screenshots/tidy11-verify.png) |
-
-_Drop PNGs into `docs/screenshots/` named as above. Recommended: 900×900 window at default Win11 dark theme so the screenshots match the in-repo XAML._
-
----
-
 ## Features
 
 - **Copilot / AI removal**: Windows Copilot, Recall, Click To Do, Paint AI, Edge Copilot, Office Copilot, Notepad AI, Voice Access, generative-AI app privacy gates.
