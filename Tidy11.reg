@@ -1,0 +1,138 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================================
+; Tidy11.reg — machine-wide AI/telemetry/privacy/debloat baseline
+; Subset of Tidy11 that works as static registry data (no scripting).
+;
+; Author:  svtica
+; License: GPL-3.0-or-later
+; Project: https://github.com/svtica/Tidy11
+;
+; Deploy via:
+;   * regedit.exe /s Tidy11.reg                         (one machine)
+;   * GPO Preferences -> Windows Settings -> Registry    (AD fleet)
+;   * reg.exe import Tidy11.reg                         (offline servicing)
+;
+; NOTE: This file ONLY covers static policy keys. It does NOT:
+;   - Stop/disable services (use the PS1 scripts for DiagTrack etc.)
+;   - Disable scheduled tasks
+;   - Remove Appx packages
+;   - Create FQDN firewall rules
+;   - Patch the default-user hive
+; For full coverage, use Tidy11.ps1 (GUI) or the Intune Proactive Remediation.
+; ============================================================================
+
+; ---------- Windows Copilot ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot]
+"TurnOffWindowsCopilot"=dword:00000001
+
+; ---------- Windows AI / Recall / Click To Do ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI]
+"DisableAIDataAnalysis"=dword:00000001
+"AllowRecallEnablement"=dword:00000000
+"DisableClickToDo"=dword:00000001
+"TurnOffSavingSnapshots"=dword:00000001
+"DisableSettingsAgent"=dword:00000001
+"DisableAgentConnectors"=dword:00000001
+"DisableAgentWorkspaces"=dword:00000001
+"DisableRemoteAgentConnectors"=dword:00000001
+
+; ---------- App privacy: generative AI access ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy]
+"LetAppsAccessGenerativeAI"=dword:00000002
+"LetAppsAccessSystemAIModels"=dword:00000002
+
+; ---------- Paint AI ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Paint]
+"DisableImageCreator"=dword:00000001
+"DisableCocreator"=dword:00000001
+"DisableGenerativeFill"=dword:00000001
+"DisableGenerativeErase"=dword:00000001
+"DisableRemoveBackground"=dword:00000001
+
+; ---------- Microsoft Edge Copilot + tweaks ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge]
+"HubsSidebarEnabled"=dword:00000000
+"CopilotPageContext"=dword:00000000
+"EdgeEntraCopilotPageContext"=dword:00000000
+"EdgeHistoryAISearchEnabled"=dword:00000000
+"ComposeInlineEnabled"=dword:00000000
+"BuiltInAIAPIsEnabled"=dword:00000000
+"AIGenThemesEnabled"=dword:00000000
+"ShareBrowsingHistoryWithCopilotSearchAllowed"=dword:00000000
+"HideFirstRunExperience"=dword:00000001
+"StartupBoostEnabled"=dword:00000000
+"BackgroundModeEnabled"=dword:00000000
+
+; ---------- Telemetry ----------
+; AllowTelemetry: 0=Security (Ent/Edu only), 1=Basic (Pro minimum), 2=Enhanced (Home minimum)
+; Pick the lowest your edition supports. 0 is set here; Home/Pro will silently bump it.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DataCollection]
+"AllowTelemetry"=dword:00000000
+"AllowDeviceNameInTelemetry"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo]
+"DisabledByGroupPolicy"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting]
+"Disabled"=dword:00000001
+
+; ---------- Activity History ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"EnableActivityFeed"=dword:00000000
+"PublishUserActivities"=dword:00000000
+"UploadUserActivities"=dword:00000000
+
+; ---------- Location ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors]
+"DisableLocation"=dword:00000001
+
+; ---------- Ads / Spotlight / Cloud content ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent]
+"DisableWindowsSpotlightFeatures"=dword:00000001
+"DisableWindowsSpotlightOnSettings"=dword:00000001
+"DisableConsumerFeatures"=dword:00000001
+"DisableWindowsConsumerFeatures"=dword:00000001
+"DisableSoftLanding"=dword:00000001
+"DisableAccountNotifications"=dword:00000001
+
+; ---------- Widgets / News and Interests ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Dsh]
+"AllowNewsAndInterests"=dword:00000000
+
+; ---------- Web search / Cortana ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"DisableSearchBoxSuggestions"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search]
+"DisableWebSearch"=dword:00000001
+"ConnectedSearchUseWeb"=dword:00000000
+
+; ---------- Game DVR ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR]
+"AllowGameDVR"=dword:00000000
+
+; ---------- Microsoft 365 Office Copilot (machine-wide master toggle) ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\copilot]
+"disablecopilot"=dword:00000001
+
+; ---------- Microsoft Account block (NON-STRICT, value=1) ----------
+; Use value=3 for strict. Uncomment if desired.
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+;"NoConnectedUser"=dword:00000001
+
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\MicrosoftAccount]
+;"DisableUserAuth"=dword:00000001
+;"DisableMSA"=dword:00000001
+
+; ---------- Defender cloud (OPTIONAL — requires Tamper Protection OFF) ----------
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet]
+;"SpynetReporting"=dword:00000000
+;"SubmitSamplesConsent"=dword:00000002
+
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine]
+;"MpCloudBlockLevel"=dword:00000000
+
+; ---------- Windows Update auto-restart (OPTIONAL — delays security patches!) ----------
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU]
+;"NoAutoRebootWithLoggedOnUsers"=dword:00000001

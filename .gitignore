@@ -1,0 +1,124 @@
+# ============================================================================
+#  Tidy11 .gitignore
+# ============================================================================
+
+# ---- Tidy11 runtime artifacts ----------------------------------------------
+# Snapshots are per-machine and contain hostname/user data — never commit.
+Tidy11-Snapshots/
+Snapshot_*/
+*-Snapshot_*/
+
+# Saved config recipes are personal preferences, not source.
+tidy11-recipe*.json
+*.tidy11-recipe.json
+
+# Run logs (also captured inside snapshot folders, but in case any leak out)
+run.log
+Tidy11.log
+Windows_11_Privacy.log
+*.transcript.txt
+
+# Created-values tracking dump (only valid inside a snapshot folder)
+created-values.json
+
+# Pre-staged Zoicware classic apps (large, third-party binaries)
+ClassicApps/
+RemoveWindowsAi.ps1
+zoicware-classic-runner.ps1
+
+# ---- PowerShell ------------------------------------------------------------
+# Compiled module manifests / catalogs we don't ship
+*.psd1.bak
+*.cat
+*.CAT
+
+# PSScriptAnalyzer cache
+.PSScriptAnalyzerSettings.psd1.bak
+PSScriptAnalyzerResults.*
+
+# Pester test output
+TestResults.xml
+coverage.xml
+*.coverage
+
+# ---- Visual Studio Code ----------------------------------------------------
+.vscode/
+!.vscode/settings.json.example
+!.vscode/extensions.json
+*.code-workspace
+
+# ---- Visual Studio / Rider / general IDE ----------------------------------
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ---- Windows ---------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.url
+
+# ---- macOS (in case anyone edits from a Mac) -------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ---- Linux -----------------------------------------------------------------
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ---- Archives & temp -------------------------------------------------------
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.tmp
+*.temp
+*~
+
+# ---- Secrets / credentials -------------------------------------------------
+# Just in case anyone ever drops a code-signing cert in here
+*.pfx
+*.p12
+*.key
+*.pem
+*.snk
+secrets.json
+.env
+.env.*
+!.env.example
+
+# ---- Editor swap files -----------------------------------------------------
+*.swp
+*.swo
+*~.nib
+local.properties
+
+# ---- GitHub-specific exceptions --------------------------------------------
+# Always keep the screenshots folder structure even if empty
+!docs/screenshots/
+!docs/screenshots/README.md

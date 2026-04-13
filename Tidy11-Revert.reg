@@ -1,0 +1,126 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================================
+; Tidy11-Revert.reg — undoes Tidy11.reg by deleting the policy values.
+;
+; Author:  svtica
+; License: GPL-3.0-or-later
+; Project: https://github.com/svtica/Tidy11
+;
+; How this works:
+;   * "valuename"=-        (trailing hyphen) deletes a single value
+;   * [-HKEY_LOCAL_MACHINE\...]                deletes the whole key and all children
+;
+; Deleting a Group Policy value is the correct rollback — Windows reverts to
+; its default behavior as if the policy had never been applied. Setting a
+; policy to 0 is NOT the same as removing it (the "not configured" state).
+;
+; Deploy via:
+;   * regedit.exe /s Tidy11-Revert.reg                  (one machine)
+;   * reg.exe import Tidy11-Revert.reg                  (scripted)
+;   * GPO Preferences -> Registry -> Action: Delete       (AD fleet)
+;
+; NOTE: This only reverses the machine-wide HKLM policy keys from Tidy11.reg.
+; It does NOT:
+;   - Re-enable services (DiagTrack, lfsvc, etc.) — run Tidy11.ps1 revert instead
+;   - Re-enable scheduled tasks
+;   - Remove FQDN firewall rules
+;   - Restore HKCU settings (run Tidy11-User-Revert.ps1 for existing users,
+;     or just let users re-run the Settings UI)
+;   - Reinstall removed Appx packages
+; ============================================================================
+
+; ---------- Windows Copilot ----------
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot]
+
+; ---------- Windows AI / Recall / Click To Do ----------
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI]
+
+; ---------- App privacy: generative AI access ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy]
+"LetAppsAccessGenerativeAI"=-
+"LetAppsAccessSystemAIModels"=-
+
+; ---------- Paint AI ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Paint]
+"DisableImageCreator"=-
+"DisableCocreator"=-
+"DisableGenerativeFill"=-
+"DisableGenerativeErase"=-
+"DisableRemoveBackground"=-
+
+; ---------- Microsoft Edge Copilot + tweaks ----------
+; Individual deletes (not whole key) so any other Edge policy you have stays put.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge]
+"HubsSidebarEnabled"=-
+"CopilotPageContext"=-
+"EdgeEntraCopilotPageContext"=-
+"EdgeHistoryAISearchEnabled"=-
+"ComposeInlineEnabled"=-
+"BuiltInAIAPIsEnabled"=-
+"AIGenThemesEnabled"=-
+"ShareBrowsingHistoryWithCopilotSearchAllowed"=-
+"HideFirstRunExperience"=-
+"StartupBoostEnabled"=-
+"BackgroundModeEnabled"=-
+
+; ---------- Telemetry ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DataCollection]
+"AllowTelemetry"=-
+"AllowDeviceNameInTelemetry"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo]
+"DisabledByGroupPolicy"=-
+
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting]
+
+; ---------- Activity History ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+"EnableActivityFeed"=-
+"PublishUserActivities"=-
+"UploadUserActivities"=-
+
+; ---------- Location ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors]
+"DisableLocation"=-
+
+; ---------- Ads / Spotlight / Cloud content ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent]
+"DisableWindowsSpotlightFeatures"=-
+"DisableWindowsSpotlightOnSettings"=-
+"DisableConsumerFeatures"=-
+"DisableWindowsConsumerFeatures"=-
+"DisableSoftLanding"=-
+"DisableAccountNotifications"=-
+
+; ---------- Widgets / News and Interests ----------
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Dsh]
+
+; ---------- Web search / Cortana ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer]
+"DisableSearchBoxSuggestions"=-
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search]
+"DisableWebSearch"=-
+"ConnectedSearchUseWeb"=-
+
+; ---------- Game DVR ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR]
+"AllowGameDVR"=-
+
+; ---------- Microsoft 365 Office Copilot (machine-wide master toggle) ----------
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\copilot]
+
+; ---------- Microsoft Account block (if you uncommented these in Tidy11.reg) ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"NoConnectedUser"=-
+
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\MicrosoftAccount]
+
+; ---------- Defender cloud (if you uncommented) ----------
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine]
+
+; ---------- Windows Update auto-restart (if you uncommented) ----------
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU]
+"NoAutoRebootWithLoggedOnUsers"=-
