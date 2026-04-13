@@ -1,6 +1,6 @@
 # Tidy11
 
-**Strip Copilot, Recall, telemetry, ads, and bloat from Windows 11 and Microsoft 365. Fully offline. GUI + Intune + GPO with snapshot rollback.**
+**Disable Copilot, Recall, telemetry, ads, and bloat on Windows 11 and Microsoft 365. Fully offline. GUI + Intune + GPO with snapshot rollback.**
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/en-us/powershell/)
@@ -12,7 +12,7 @@ Tidy11 is a fully offline, single-folder toolkit for taking back control of a Wi
 
 No runtime network dependency. No telemetry of its own. No code you can't read.
 
-**Topics:** `windows-11` · `privacy` · `debloat` · `copilot` · `recall` · `telemetry` · `intune` · `gpo` · `powershell` · `wpf` · `microsoft-365` · `anti-ai` · `windows-hardening`
+**Topics:** `windows-11` · `privacy` · `cleanup` · `copilot` · `recall` · `telemetry` · `intune` · `gpo` · `powershell` · `wpf` · `microsoft-365` · `ai-removal` · `windows-hardening`
 
 ---
 
@@ -30,10 +30,10 @@ _Drop PNGs into `docs/screenshots/` named as above. Recommended: 900×900 window
 
 ## Features
 
-- **Anti-Copilot / Anti-AI**: Windows Copilot, Recall, Click To Do, Paint AI, Edge Copilot, Office Copilot, Notepad AI, Voice Access, generative-AI app privacy gates.
+- **Copilot / AI removal**: Windows Copilot, Recall, Click To Do, Paint AI, Edge Copilot, Office Copilot, Notepad AI, Voice Access, generative-AI app privacy gates.
 - **Privacy**: telemetry (DiagTrack + scheduled tasks + FQDN firewall blocks), advertising ID, activity history, location, tailored experiences, feedback prompts, typing data harvesting.
-- **Debloat**: Widgets, Bing/Cortana in Start, Xbox services (optional), Game DVR (optional), classic Win10 context menu, taskbar cleanup, Edge first-run, Office telemetry.
-- **Classic apps**: four installation methods for replacing removed Win11 apps (Winget, Microsoft-native, Zoicware online, Zoicware local) with per-app choice.
+- **System cleanup**: Widgets, Bing/Cortana in Start, Xbox services (optional), Game DVR (optional), classic Win10 context menu, taskbar cleanup, Edge first-run, Office telemetry.
+- **Classic apps**: four installation methods for replacing removed Win11 apps (Winget, Microsoft-native, Source Redist Online, Source Redist Local) with per-app choice.
 - **Two rollback layers** before any change:
   - Windows System Restore point (enabled automatically if disabled).
   - Tidy11's own snapshot with registry exports, services, scheduled tasks, firewall rules, `hosts` backup, and a net-new-value log for clean deletion.
@@ -266,10 +266,10 @@ The GUI has a dedicated section with 5 radio buttons — pick one method, then t
 | **Skip** | Default. Does nothing. | — | ✅ |
 | **Winget alternatives** | Installs Notepad++, Paint.NET, ShareX, IrfanView via winget. | ✅ Clean — Microsoft's own distribution | ✅ (once winget is present) |
 | **Native** | Classic Notepad via `Add-WindowsCapability` FoD, restores Win11's built-in Photo Viewer via registry, installs Photos Legacy from the Store. Paint and Snipping Tool skipped — no legit Microsoft source. | ✅ Clean — all Microsoft-sourced | ✅ |
-| **Zoicware online** | Live-fetches `zoicware/RemoveWindowsAI` and runs its `-InstallClassicApps` mode. Redistributes Microsoft binaries. | ⚠️ Gray — Microsoft copyrights redistributed by a third party | ❌ (needs internet) |
-| **Zoicware local** | Same, but fully offline — requires pre-staged `RemoveWindowsAi.ps1` + `ClassicApps/` folder next to `Tidy11.ps1`. Fails fast if missing. | ⚠️ Gray — same concern, you host the files | ✅ (after staging) |
+| **Source Redist Online** | Live-fetches `zoicware/RemoveWindowsAI` (the upstream redistribution source) and runs its `-InstallClassicApps` mode. Redistributes Microsoft binaries. | ⚠️ Gray — Microsoft copyrights redistributed by a third party | ❌ (needs internet) |
+| **Source Redist Local** | Same, but fully offline — requires pre-staged `RemoveWindowsAi.ps1` + `ClassicApps/` folder next to `Tidy11.ps1`. Fails fast if missing. | ⚠️ Gray — same concern, you host the files | ✅ (after staging) |
 
-Recommendation for enterprise: **Winget** or **Native**. Zoicware methods are for personal machines where you specifically want muscle-memory-identical classic binaries.
+Recommendation for enterprise: **Winget** or **Native**. Source Redist methods are for personal machines where you specifically want muscle-memory-identical classic binaries.
 
 ---
 
@@ -289,7 +289,7 @@ Tidy11 is a derivative work that ports, merges, and extends logic from three ope
 
 - [**sevsec/windows-11-privacy**](https://github.com/sevsec/windows-11-privacy) — **GPL-3.0**. Origin of the helper functions (`Set-Reg`, `Remove-RegValue`, service/task helpers, FQDN/hosts-block pattern, `Invoke-Safely` wrapper) and the telemetry / ads / Microsoft Account / activity-location modules. Tidy11 inherits its license from this project.
 - [**zoicware/RemoveWindowsAI**](https://github.com/zoicware/RemoveWindowsAI) — MIT. Origin of the AI/Copilot/Recall registry research now in `Invoke-CopilotNative` and the optional classic-apps install path.
-- [**bRootForceSec/Win11-Debloat-And-Privacy**](https://github.com/bRootForceSec/Win11-Debloat-And-Privacy) — MIT. Origin of the debloat / performance / Edge / Office-telemetry tweaks.
+- [**bRootForceSec/Win11-Debloat-And-Privacy**](https://github.com/bRootForceSec/Win11-Debloat-And-Privacy) — MIT. Origin of the cleanup / performance / Edge / Office-telemetry tweaks.
 
 New material original to Tidy11: the WPF GUI, the Intune script trio (`Tidy11-Detect.ps1` / `Tidy11-Remediate.ps1` / `Tidy11-User.ps1`), the standalone `Tidy11-Restore.ps1`, the differential firewall and net-new-value tracking in the snapshot system, the hosts file backup, the Windows System Restore integration, the config recipe save/load, the Office/Notepad Copilot wrappers, the four-method classic-apps installer, the static `.reg` baselines, and the per-setting reference documentation.
 
