@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Tidy11-Detect.ps1 — Intune Proactive Remediation detection script.
+    Tidy11-Detect.ps1 - Intune Proactive Remediation detection script.
 
 .DESCRIPTION
     Non-interactive read-only check. Returns exit 0 if baseline is compliant
@@ -15,7 +15,7 @@
     Project: https://github.com/svtica/Tidy11
 
     Runs as SYSTEM. No user interaction. Keep this FAST (<5 sec target).
-    Tests a representative subset of policy keys — if the key is wrong,
+    Tests a representative subset of policy keys - if the key is wrong,
     the baseline has drifted and remediation will re-apply everything.
 #>
 
@@ -30,7 +30,7 @@ function Test-RegValue {
     } catch { return $false }
 }
 
-# Representative canary keys — one per major category.
+# Representative canary keys - one per major category.
 # If any drift, remediation script re-applies everything.
 $checks = @(
     # Copilot
@@ -65,7 +65,7 @@ $checks = @(
 
 $drift = @()
 foreach ($c in $checks) {
-    # Telemetry is special — edition-dependent. Accept any value <=2 (Enhanced or lower).
+    # Telemetry is special - edition-dependent. Accept any value <=2 (Enhanced or lower).
     if ($c.Cat -eq 'Telemetry') {
         try {
             $v = (Get-ItemProperty -Path $c.P -Name $c.N -ErrorAction Stop).$($c.N)

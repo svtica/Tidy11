@@ -1,21 +1,21 @@
 <#
 .SYNOPSIS
-    Tidy11.Modules.psm1 — all disable/enable functions used by the Tidy11 GUI.
+    Tidy11.Modules.psm1 - all disable/enable functions used by the Tidy11 GUI.
 
 .DESCRIPTION
     Sources and credits (no runtime network dependency):
-      * sevsec/windows-11-privacy  — GPL-3.0
+      * sevsec/windows-11-privacy  - GPL-3.0
           https://github.com/sevsec/windows-11-privacy
           Origin of: helper functions (Set-Reg, Remove-RegValue, Disable-Svc,
           Enable-Svc, Disable-TaskPath, Enable-TaskPath, Add-BlockDomain,
           Remove-BlockDomain, Invoke-Safely), the FQDN-block / hosts-fallback
           pattern, the telemetry / ads / MSA / activity-location modules, and
           the snapshot scaffolding shape.
-      * zoicware/RemoveWindowsAI  — MIT
+      * zoicware/RemoveWindowsAI  - MIT
           https://github.com/zoicware/RemoveWindowsAI
           Origin of the AI/Copilot/Recall registry research now in
           Invoke-CopilotNative, plus the optional classic-apps install path.
-      * bRootForceSec/Win11-Debloat-And-Privacy  — MIT
+      * bRootForceSec/Win11-Debloat-And-Privacy  - MIT
           https://github.com/bRootForceSec/Win11-Debloat-And-Privacy
           Origin of the cleanup / performance / Edge / Office-telemetry tweaks.
 
@@ -220,7 +220,7 @@ function Get-TelemetryMinValue {
 }
 
 # ============================================================================
-#  sevsec/windows-11-privacy — ported modules
+#  sevsec/windows-11-privacy - ported modules
 # ============================================================================
 $script:TelemetryHosts = @(
     'v10.events.data.microsoft.com',
@@ -328,7 +328,7 @@ function Invoke-ActivityLocation {
 }
 
 # ============================================================================
-#  bRootForceSec/Win11-Debloat-And-Privacy — ported unique modules
+#  bRootForceSec/Win11-Debloat-And-Privacy - ported unique modules
 # ============================================================================
 function Invoke-XboxServices {
     param([bool]$Revert)
@@ -340,7 +340,7 @@ function Invoke-XboxServices {
             Invoke-Safely { Disable-Svc $s } "Xbox service disabled: $s"
         }
     }
-    Write-Warn "XboxGipSvc disable MAY break some game controllers — use revert if they stop working."
+    Write-Warn "XboxGipSvc disable MAY break some game controllers - use revert if they stop working."
 }
 
 function Invoke-GameDVR {
@@ -448,7 +448,7 @@ function Invoke-OfficeTelemetry {
 }
 
 # ============================================================================
-#  Wrapper extras — Office Copilot / Notepad / Teams reminder
+#  Wrapper extras - Office Copilot / Notepad / Teams reminder
 # ============================================================================
 function Invoke-OfficeCopilot {
     param([bool]$Revert)
@@ -478,7 +478,7 @@ function Show-TeamsReminder {
 }
 
 # ============================================================================
-#  Native Copilot/AI disable — fully offline, no upstream fetch
+#  Native Copilot/AI disable - fully offline, no upstream fetch
 #  Ports the essential reg-based bits from zoicware/RemoveWindowsAI natively
 #  so the tool works without any network dependency.
 # ============================================================================
@@ -569,7 +569,7 @@ function Invoke-CopilotNative {
         Invoke-Safely { Set-Reg $gamingKey 'Server'         'String' ' ' } "Gaming Copilot server cleared"
     }
 
-    # --- Voice Access (registry only — file removal needs TrustedInstaller) ---
+    # --- Voice Access (registry only - file removal needs TrustedInstaller) ---
     Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\VoiceAccess' 'RunningState' 'DWord' $e } "Voice Access running state"
 
     # --- Typing data harvesting for AI training ---
@@ -580,14 +580,14 @@ function Invoke-CopilotNative {
 }
 
 # ============================================================================
-#  Classic App Replacements — 4 methods selectable at runtime
+#  Classic App Replacements - 4 methods selectable at runtime
 #
 #  Per-app legal status:
 #    notepad / photoviewer / photoslegacy : Microsoft-sourced, always clean.
 #    mspaint / snippingtool               : need binaries Microsoft removed
-#                                           from Win11 — only the upstream
+#                                           from Win11 - only the upstream
 #                                           source redist ships them.
-#                                           Gray zone — user opt-in.
+#                                           Gray zone - user opt-in.
 # ============================================================================
 $script:WingetAlternatives = @{
     'notepad'      = @{ Id = 'Notepad++.Notepad++';    Name = 'Notepad++' }
@@ -618,7 +618,7 @@ function Install-WingetPackage {
 }
 
 function Install-ClassicNotepadNative {
-    # Microsoft's own Feature-on-Demand capability — fully legit
+    # Microsoft's own Feature-on-Demand capability - fully legit
     try {
         taskkill.exe /im notepad.exe /f 2>&1 | Out-Null
         Get-AppxPackage '*notepad*' -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
@@ -633,7 +633,7 @@ function Install-ClassicNotepadNative {
 }
 
 function Install-ClassicPhotoViewerNative {
-    # Pure registry restoration — Win11 still ships the PhotoViewer.dll
+    # Pure registry restoration - Win11 still ships the PhotoViewer.dll
     $extensions = @('.Bmp','.Cr2','.Dib','.Gif','.JFIF','.Jpe','.Jpeg','.Jpg','.Jxr','.Png','.Tif','.Tiff','.Wdp')
     foreach ($ext in $extensions) {
         try {
@@ -683,7 +683,7 @@ function Install-PhotosLegacyNative {
             return
         }
     } catch {}
-    Write-FAIL "Photos Legacy install failed — no supported installer found. Open Microsoft Store and search 'Microsoft Photos Legacy'."
+    Write-FAIL "Photos Legacy install failed - no supported installer found. Open Microsoft Store and search 'Microsoft Photos Legacy'."
 }
 
 function Invoke-SourceRedistClassicApps {
@@ -693,7 +693,7 @@ function Invoke-SourceRedistClassicApps {
         [string]$LocalPath
     )
     Write-Warn '=========================================================='
-    Write-Warn ' SOURCE REDIST CLASSIC APPS — the following step downloads'
+    Write-Warn ' SOURCE REDIST CLASSIC APPS - the following step downloads'
     Write-Warn ' and runs zoicware/RemoveWindowsAI (MIT-licensed) in order'
     Write-Warn ' to install classic MS Paint and/or Snipping Tool binaries.'
     Write-Warn ' Those binaries are Microsoft copyrights redistributed by'
@@ -729,7 +729,7 @@ function Invoke-SourceRedistClassicApps {
             Write-FAIL "Source Redist Local run failed: $($_.Exception.Message)"
         }
     } else {
-        # Online — upstream script will download its own ClassicApps to TEMP
+        # Online - upstream script will download its own ClassicApps to TEMP
         try {
             $sb = [scriptblock]::Create(
                 "& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1'))) $($argList -join ' ')"
@@ -860,7 +860,7 @@ function Invoke-Verification {
 }
 
 # ============================================================================
-#  Config recipes — save/load GUI selections as JSON for cross-machine reuse
+#  Config recipes - save/load GUI selections as JSON for cross-machine reuse
 # ============================================================================
 function Export-Tidy11Config {
     param(
@@ -908,7 +908,7 @@ function Import-Tidy11Config {
 }
 
 # ============================================================================
-#  Pre-change snapshot — captures everything Tidy11 might modify
+#  Pre-change snapshot - captures everything Tidy11 might modify
 # ============================================================================
 # ============================================================================
 #  Windows System Restore point (independent of Tidy11 snapshot system)
