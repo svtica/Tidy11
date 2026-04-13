@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Tidy11.ps1 — one-click WPF tool to strip Copilot/AI, telemetry, ads, bloat
-    from Windows 11 and Microsoft 365. Restores privacy and performance.
+    Tidy11.ps1 — one-click WPF tool to disable Copilot/AI, telemetry, ads,
+    and bloat on Windows 11 and Microsoft 365. Restores privacy and performance.
 
 .DESCRIPTION
     Consolidates three upstream sources into one offline tool:
       1) zoicware/RemoveWindowsAI  (natively ported, AI/Copilot features)
       2) sevsec/windows-11-privacy (natively ported, 5 privacy modules)
-      3) bRootForceSec/Win11-Debloat-And-Privacy (natively ported, debloat + perf)
+      3) bRootForceSec/Win11-Debloat-And-Privacy (natively ported, cleanup + perf)
       +  Office/Notepad Copilot master toggles not covered by the above
 
     No network dependency at runtime. Fully offline.
@@ -61,7 +61,7 @@ Import-Module $modulePath -Force -DisableNameChecking
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tidy11 — Debloat, Privacy, Anti-Copilot"
+        Title="Tidy11 — Cleanup, Privacy, Copilot Removal"
         Height="900" Width="900"
         WindowStartupLocation="CenterScreen"
         Background="#1a1a1a">
@@ -105,7 +105,7 @@ Import-Module $modulePath -Force -DisableNameChecking
 
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="4,0,0,8">
             <TextBlock Text="Tidy11" FontSize="22" FontWeight="Bold" Foreground="#4fc3f7"/>
-            <TextBlock Text="  —  Debloat | Privacy | Anti-Copilot" FontSize="14" Foreground="#888" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            <TextBlock Text="  —  Cleanup | Privacy | Copilot Removal" FontSize="14" Foreground="#888" VerticalAlignment="Center" Margin="4,0,0,0"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto">
@@ -138,8 +138,8 @@ Import-Module $modulePath -Force -DisableNameChecking
                     <StackPanel>
                         <CheckBox Name="cbTelemetry"    Content="Telemetry (DiagTrack, tasks, firewall blocks)" IsChecked="True"/>
                         <CheckBox Name="cbAds"          Content="Ads / Recommendations / Spotlight" IsChecked="True"/>
-                        <CheckBox Name="cbMSA"          Content="Block Microsoft Account nudges" IsChecked="False"/>
-                        <CheckBox Name="cbMSAStrict"    Content="    └ Strict MSA block (value=3)" IsChecked="False" Margin="24,3,8,3"/>
+                        <CheckBox Name="cbMSA"          Content="Block Microsoft Account nudges (optional — off for enterprise MSA use)" IsChecked="False"/>
+                        <CheckBox Name="cbMSAStrict"    Content="    └ Strict MSA block (value=3 — may break Store/Teams/OneDrive personal sign-in)" IsChecked="False" Margin="24,3,8,3"/>
                         <CheckBox Name="cbActLoc"      Content="Activity History + global Location" IsChecked="True"/>
                     </StackPanel>
                 </GroupBox>
@@ -150,8 +150,8 @@ Import-Module $modulePath -Force -DisableNameChecking
                         <RadioButton Name="rbMethodSkip"     GroupName="classicMethod" Content="Skip (don't install anything)" IsChecked="True" Foreground="#e0e0e0" Margin="16,2,8,2"/>
                         <RadioButton Name="rbMethodWinget"   GroupName="classicMethod" Content="Winget alternatives — Notepad++ / Paint.NET / ShareX / IrfanView" Foreground="#e0e0e0" Margin="16,2,8,2"/>
                         <RadioButton Name="rbMethodNative"   GroupName="classicMethod" Content="Native (Microsoft sources only — Notepad, Photo Viewer, Photos Legacy)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
-                        <RadioButton Name="rbMethodZoicOn"   GroupName="classicMethod" Content="Zoicware download (opt-in — includes classic MS Paint + Snipping Tool)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
-                        <RadioButton Name="rbMethodZoicLoc"  GroupName="classicMethod" Content="Zoicware local (use ./ClassicApps/ folder next to this script)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
+                        <RadioButton Name="rbMethodRedistOn"   GroupName="classicMethod" Content="Source Redist Online (opt-in — includes classic MS Paint + Snipping Tool)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
+                        <RadioButton Name="rbMethodRedistLoc"  GroupName="classicMethod" Content="Source Redist Local (use ./ClassicApps/ folder next to this script)" Foreground="#e0e0e0" Margin="16,2,8,2"/>
 
                         <TextBlock Text="Apps to install:" FontWeight="Bold" Margin="8,8,8,2"/>
                         <CheckBox Name="cbAppNotepad"     Content="Classic Notepad"/>
@@ -161,7 +161,7 @@ Import-Module $modulePath -Force -DisableNameChecking
                         <CheckBox Name="cbAppPhotosLeg"   Content="Photos Legacy (from Microsoft Store)"/>
 
                         <TextBlock TextWrapping="Wrap" Margin="8,6,8,2" FontSize="10" Foreground="#888"
-                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Zoicware options install true Win10 binaries but redistribute Microsoft copyrights — use at your discretion."/>
+                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Source Redist options install true Win10 binaries but redistribute Microsoft copyrights — use at your discretion."/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
@@ -169,7 +169,7 @@ Import-Module $modulePath -Force -DisableNameChecking
 
         <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="Debloat (via bRootForceSec)">
+                <GroupBox Header="System Cleanup (via bRootForceSec)">
                     <StackPanel>
                         <CheckBox Name="cbXbox"           Content="Xbox services (XblAuth/GameSave/Net/GipSvc)" IsChecked="False"/>
                         <CheckBox Name="cbGameDVR"        Content="Game DVR + Game Mode" IsChecked="False"/>
@@ -197,9 +197,9 @@ Import-Module $modulePath -Force -DisableNameChecking
 
                 <GroupBox Header="Presets">
                     <StackPanel>
-                        <Button Name="btnPresetSafe"     Content="SAFE  — AI/telemetry/ads (recommended)"        HorizontalAlignment="Stretch"/>
-                        <Button Name="btnPresetHeavy"    Content="HEAVY — SAFE + Xbox + Game DVR"                 HorizontalAlignment="Stretch"/>
-                        <Button Name="btnPresetNuclear"  Content="NUCLEAR — everything including Appx removal"  HorizontalAlignment="Stretch" Background="#4a0000"/>
+                        <Button Name="btnPresetSafe"      Content="SAFE     — AI / telemetry / ads (recommended)"     HorizontalAlignment="Stretch"/>
+                        <Button Name="btnPresetExtended"  Content="EXTENDED — SAFE + Xbox + Game DVR"                  HorizontalAlignment="Stretch"/>
+                        <Button Name="btnPresetFull"      Content="FULL     — everything including Appx removal"      HorizontalAlignment="Stretch" Background="#4a0000"/>
                     </StackPanel>
                 </GroupBox>
 
@@ -252,17 +252,17 @@ $cb = @{}
     'cbPaint','cbPhotos','cbEdge','cbOffice','cbOutlook','cbNotepad',
     # Sevsec
     'cbTelemetry','cbAds','cbMSA','cbMSAStrict','cbActLoc',
-    # Debloat
+    # System cleanup
     'cbXbox','cbGameDVR','cbWidgets','cbContextMenu','cbWebSearch',
     'cbTaskbar','cbPerf','cbEdgeDebloat','cbOfficeTelem',
     # Classic apps — method radios + app checkboxes
-    'rbMethodSkip','rbMethodWinget','rbMethodNative','rbMethodZoicOn','rbMethodZoicLoc',
+    'rbMethodSkip','rbMethodWinget','rbMethodNative','rbMethodRedistOn','rbMethodRedistLoc',
     'cbAppNotepad','cbAppPaint','cbAppSnip','cbAppPhoto','cbAppPhotosLeg',
     # Config / Snapshot
     'cbSystemRestore','cbAutoSnapshot','btnSaveConfig','btnLoadConfig','btnRestoreSnap',
     # Buttons + log
     'txtLog','btnSelectAll','btnClear','btnVerify','btnDisable','btnRevert','btnExit',
-    'btnPresetSafe','btnPresetHeavy','btnPresetNuclear'
+    'btnPresetSafe','btnPresetExtended','btnPresetFull'
 ) | ForEach-Object { $cb[$_] = $window.FindName($_) }
 
 # Wire log callback from module to GUI textbox
@@ -284,8 +284,8 @@ function Set-AllCheckboxes {
 
 # --- presets ---
 $cb.btnSelectAll.Add_Click({ Set-AllCheckboxes $true })
-$cb.btnClear.Add_Click    ({ Set-AllCheckboxes $false })
-$cb.btnExit.Add_Click     ({ $window.Close() })
+$cb.btnClear.Add_Click({ Set-AllCheckboxes $false })
+$cb.btnExit.Add_Click({ $window.Close() })
 
 $cb.btnPresetSafe.Add_Click({
     Set-AllCheckboxes $false
@@ -296,7 +296,7 @@ $cb.btnPresetSafe.Add_Click({
                   ) { $cb[$k].IsChecked = $true }
     Write-Log 'Preset: SAFE selected'
 })
-$cb.btnPresetHeavy.Add_Click({
+$cb.btnPresetExtended.Add_Click({
     Set-AllCheckboxes $false
     foreach ($k in 'cbWinCopilot','cbRecall','cbClickToDo','cbSearchAI','cbExplorer','cbVoice','cbAppx','cbPreventReinstall',
                    'cbPaint','cbPhotos','cbEdge','cbOffice','cbOutlook','cbNotepad',
@@ -304,11 +304,15 @@ $cb.btnPresetHeavy.Add_Click({
                    'cbXbox','cbGameDVR','cbWidgets','cbContextMenu','cbWebSearch',
                    'cbTaskbar','cbPerf','cbEdgeDebloat','cbOfficeTelem'
                   ) { $cb[$k].IsChecked = $true }
-    Write-Log 'Preset: HEAVY selected'
+    Write-Log 'Preset: EXTENDED selected'
 })
-$cb.btnPresetNuclear.Add_Click({
+$cb.btnPresetFull.Add_Click({
     Set-AllCheckboxes $true
-    Write-Log 'Preset: NUCLEAR selected (everything)'
+    # MSA block stays opt-in even in the FULL preset: enterprise tenants may
+    # require Microsoft Accounts for Store/Teams/Intune sign-in. Tick manually.
+    $cb.cbMSA.IsChecked       = $false
+    $cb.cbMSAStrict.IsChecked = $false
+    Write-Log 'Preset: FULL selected (everything except MSA block — tick manually if needed)'
 })
 
 # --- config recipe save/load helpers ---
@@ -418,7 +422,7 @@ $runAction = {
             }
         }
 
-        # --- native AI/Copilot disable (replaces zoicware live fetch) ---
+        # --- native AI/Copilot disable (replaces upstream live fetch) ---
         $anyAI = ($cb.cbWinCopilot.IsChecked -or $cb.cbRecall.IsChecked -or $cb.cbClickToDo.IsChecked -or
                   $cb.cbSearchAI.IsChecked   -or $cb.cbExplorer.IsChecked -or $cb.cbPaint.IsChecked  -or
                   $cb.cbEdge.IsChecked       -or $cb.cbVoice.IsChecked    -or $cb.cbPhotos.IsChecked -or
@@ -436,7 +440,7 @@ $runAction = {
         if ($cb.cbMSA.IsChecked)       { Invoke-MicrosoftAccount -Revert $isRevert -Strict ([bool]$cb.cbMSAStrict.IsChecked) }
         if ($cb.cbActLoc.IsChecked)    { Invoke-ActivityLocation -Revert $isRevert }
 
-        # --- bRootForceSec debloat modules ---
+        # --- bRootForceSec cleanup modules ---
         if ($cb.cbXbox.IsChecked)          { Invoke-XboxServices      -Revert $isRevert }
         if ($cb.cbGameDVR.IsChecked)       { Invoke-GameDVR           -Revert $isRevert }
         if ($cb.cbWidgets.IsChecked)       { Invoke-Widgets           -Revert $isRevert }
@@ -463,8 +467,8 @@ $runAction = {
             $method = 'Skip'
             if ($cb.rbMethodWinget.IsChecked)  { $method = 'Winget' }
             elseif ($cb.rbMethodNative.IsChecked) { $method = 'Native' }
-            elseif ($cb.rbMethodZoicOn.IsChecked) { $method = 'ZoicwareOnline' }
-            elseif ($cb.rbMethodZoicLoc.IsChecked) { $method = 'ZoicwareLocal' }
+            elseif ($cb.rbMethodRedistOn.IsChecked) { $method = 'SourceRedistOnline' }
+            elseif ($cb.rbMethodRedistLoc.IsChecked) { $method = 'SourceRedistLocal' }
 
             $apps = @()
             if ($cb.cbAppNotepad.IsChecked)   { $apps += 'notepad' }

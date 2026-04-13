@@ -17,9 +17,9 @@
           Invoke-CopilotNative, plus the optional classic-apps install path.
       * bRootForceSec/Win11-Debloat-And-Privacy  — MIT
           https://github.com/bRootForceSec/Win11-Debloat-And-Privacy
-          Origin of the debloat / performance / Edge / Office-telemetry tweaks.
+          Origin of the cleanup / performance / Edge / Office-telemetry tweaks.
 
-    Tidy11 - Strip Copilot, telemetry, ads, and bloat from Windows 11 and M365
+    Tidy11 - Disable Copilot, telemetry, ads, and bloat on Windows 11 and M365
     Copyright (C) 2026 svtica
 
     This program is free software: you can redistribute it and/or modify
@@ -585,8 +585,9 @@ function Invoke-CopilotNative {
 #  Per-app legal status:
 #    notepad / photoviewer / photoslegacy : Microsoft-sourced, always clean.
 #    mspaint / snippingtool               : need binaries Microsoft removed
-#                                           from Win11 — only zoicware ships
-#                                           them. Gray zone — user opt-in.
+#                                           from Win11 — only the upstream
+#                                           source redist ships them.
+#                                           Gray zone — user opt-in.
 # ============================================================================
 $script:WingetAlternatives = @{
     'notepad'      = @{ Id = 'Notepad++.Notepad++';    Name = 'Notepad++' }
@@ -685,18 +686,18 @@ function Install-PhotosLegacyNative {
     Write-FAIL "Photos Legacy install failed — no supported installer found. Open Microsoft Store and search 'Microsoft Photos Legacy'."
 }
 
-function Invoke-ZoicwareClassicApps {
+function Invoke-SourceRedistClassicApps {
     param(
         [string[]]$Apps,
         [ValidateSet('Online','Local')][string]$Source,
         [string]$LocalPath
     )
     Write-Warn '=========================================================='
-    Write-Warn ' ZOICWARE CLASSIC APPS — the following step downloads and'
-    Write-Warn ' runs zoicware/RemoveWindowsAI (MIT-licensed) in order to'
-    Write-Warn ' install classic MS Paint and/or Snipping Tool binaries.'
+    Write-Warn ' SOURCE REDIST CLASSIC APPS — the following step downloads'
+    Write-Warn ' and runs zoicware/RemoveWindowsAI (MIT-licensed) in order'
+    Write-Warn ' to install classic MS Paint and/or Snipping Tool binaries.'
     Write-Warn ' Those binaries are Microsoft copyrights redistributed by'
-    Write-Warn ' the zoicware project. You are opting in explicitly.'
+    Write-Warn ' the upstream project. You are opting in explicitly.'
     Write-Warn '=========================================================='
 
     $argList = @('-nonInteractive','-InstallClassicApps',($Apps -join ','))
@@ -705,37 +706,37 @@ function Invoke-ZoicwareClassicApps {
     # run it fully offline. If anything is missing, fail with clear instructions.
     if ($Source -eq 'Local') {
         if (-not $LocalPath) {
-            Write-FAIL 'Zoicware Local: no LocalPath provided.'
+            Write-FAIL 'Source Redist Local: no LocalPath provided.'
             return
         }
         $localCaDir = Join-Path $LocalPath 'ClassicApps'
         if (-not (Test-Path $localCaDir)) {
-            Write-FAIL "Zoicware Local: ClassicApps folder not found at: $localCaDir"
+            Write-FAIL "Source Redist Local: ClassicApps folder not found at: $localCaDir"
             Write-FAIL 'Pre-stage: download https://github.com/zoicware/RemoveWindowsAI/tree/main/ClassicApps into that folder first.'
             return
         }
         $localScript = Join-Path $LocalPath 'RemoveWindowsAi.ps1'
         if (-not (Test-Path $localScript)) {
-            Write-FAIL "Zoicware Local: RemoveWindowsAi.ps1 not found at: $localScript"
+            Write-FAIL "Source Redist Local: RemoveWindowsAi.ps1 not found at: $localScript"
             Write-FAIL 'Pre-stage: download https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1 next to Tidy11.ps1.'
             Write-FAIL 'This mode is strictly offline and will NOT fetch anything at runtime.'
             return
         }
         try {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $localScript @argList 2>&1 |
-                ForEach-Object { Write-Log $_ 'ZOICWARE' }
+                ForEach-Object { Write-Log $_ 'REDIST' }
         } catch {
-            Write-FAIL "Zoicware local run failed: $($_.Exception.Message)"
+            Write-FAIL "Source Redist Local run failed: $($_.Exception.Message)"
         }
     } else {
-        # Online — zoicware script will download its own ClassicApps to TEMP
+        # Online — upstream script will download its own ClassicApps to TEMP
         try {
             $sb = [scriptblock]::Create(
                 "& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1'))) $($argList -join ' ')"
             )
-            & $sb 2>&1 | ForEach-Object { Write-Log $_ 'ZOICWARE' }
+            & $sb 2>&1 | ForEach-Object { Write-Log $_ 'REDIST' }
         } catch {
-            Write-FAIL "Zoicware online invocation failed: $($_.Exception.Message)"
+            Write-FAIL "Source Redist Online invocation failed: $($_.Exception.Message)"
         }
     }
 }
@@ -743,7 +744,7 @@ function Invoke-ZoicwareClassicApps {
 function Invoke-ClassicApps {
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('Winget','Native','ZoicwareOnline','ZoicwareLocal','Skip')]
+        [ValidateSet('Winget','Native','SourceRedistOnline','SourceRedistLocal','Skip')]
         [string]$Method,
         [string[]]$Apps = @(),
         [string]$LocalPath = $null
@@ -771,16 +772,16 @@ function Invoke-ClassicApps {
                     'notepad'      { Install-ClassicNotepadNative }
                     'photoviewer'  { Install-ClassicPhotoViewerNative }
                     'photoslegacy' { Install-PhotosLegacyNative }
-                    'mspaint'      { Write-Warn "mspaint: no native path (Microsoft removed the binaries from Win11). Use Winget (Paint.NET) or Zoicware methods." }
-                    'snippingtool' { Write-Warn "snippingtool: no native path. Use Winget (ShareX) or Zoicware methods." }
+                    'mspaint'      { Write-Warn "mspaint: no native path (Microsoft removed the binaries from Win11). Use Winget (Paint.NET) or Source Redist methods." }
+                    'snippingtool' { Write-Warn "snippingtool: no native path. Use Winget (ShareX) or Source Redist methods." }
                 }
             }
         }
-        'ZoicwareOnline' {
-            Invoke-ZoicwareClassicApps -Apps $Apps -Source Online
+        'SourceRedistOnline' {
+            Invoke-SourceRedistClassicApps -Apps $Apps -Source Online
         }
-        'ZoicwareLocal' {
-            Invoke-ZoicwareClassicApps -Apps $Apps -Source Local -LocalPath $LocalPath
+        'SourceRedistLocal' {
+            Invoke-SourceRedistClassicApps -Apps $Apps -Source Local -LocalPath $LocalPath
         }
     }
 }

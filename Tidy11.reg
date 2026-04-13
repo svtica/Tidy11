@@ -1,7 +1,7 @@
 Windows Registry Editor Version 5.00
 
 ; ============================================================================
-; Tidy11.reg — machine-wide AI/telemetry/privacy/debloat baseline
+; Tidy11.reg — machine-wide AI/telemetry/privacy/cleanup baseline
 ; Subset of Tidy11 that works as static registry data (no scripting).
 ;
 ; Author:  svtica

@@ -21,9 +21,10 @@ Windows_11_Privacy.log
 # Created-values tracking dump (only valid inside a snapshot folder)
 created-values.json
 
-# Pre-staged Zoicware classic apps (large, third-party binaries)
+# Pre-staged Source Redist classic apps (large, third-party binaries)
 ClassicApps/
 RemoveWindowsAi.ps1
+# Legacy runner name from older Tidy11 versions — kept to ignore leftovers
 zoicware-classic-runner.ps1
 
 # ---- PowerShell ------------------------------------------------------------
