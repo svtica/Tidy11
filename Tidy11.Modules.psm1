@@ -117,8 +117,22 @@ function Set-Reg {
             if ($probe -and $null -ne $probe.$Name) { $valueExisted = $true }
         } catch {}
     }
-    if (-not $keyExisted) { New-Item -Path $Path -Force | Out-Null }
-    New-ItemProperty -Path $Path -Name $Name -PropertyType $Type -Value $Value -Force | Out-Null
+    # IMPORTANT: -ErrorAction Stop makes non-terminating errors (access denied,
+    # "operation not allowed", etc.) throw, so Invoke-Safely catches them as FAIL
+    # instead of spilling a red stack trace while still logging OK.
+    if (-not $keyExisted) { New-Item -Path $Path -Force -ErrorAction Stop | Out-Null }
+    try {
+        New-ItemProperty -Path $Path -Name $Name -PropertyType $Type -Value $Value -Force -ErrorAction Stop | Out-Null
+    } catch {
+        # If the existing value has a different type, -Force alone does not
+        # always replace it. Delete and recreate in that case.
+        if ($valueExisted) {
+            Remove-ItemProperty -Path $Path -Name $Name -Force -ErrorAction Stop
+            New-ItemProperty -Path $Path -Name $Name -PropertyType $Type -Value $Value -Force -ErrorAction Stop | Out-Null
+        } else {
+            throw
+        }
+    }
     if (-not $valueExisted -and $null -ne $script:CreatedValues) {
         $script:CreatedValues.Add([pscustomobject]@{
             Path       = $Path
@@ -180,6 +194,44 @@ $script:SupportsFqdn = ($null -ne (Get-Command New-NetFirewallRule).Parameters['
 $script:HostsPath    = "$env:SystemRoot\System32\drivers\etc\hosts"
 $script:HostsMarker  = '# PRIVACY-FQDN-BLOCK'
 
+function Invoke-HostsFileMutation {
+    # Read hosts, run $Mutator on its lines, write result back - with retries
+    # to handle transient locks held by DnsClient / AV / Defender. Using
+    # System.IO avoids Add-Content's "the stream cannot be read" failure,
+    # which happens because Add-Content sniffs encoding by opening the file
+    # for read first.
+    param(
+        [Parameter(Mandatory)][scriptblock]$Mutator,
+        [object[]]$MutatorArgs = @()
+    )
+    $attempts    = 0
+    $maxAttempts = 6
+    $lastError   = $null
+    while ($attempts -lt $maxAttempts) {
+        try {
+            $existing = @()
+            if ([System.IO.File]::Exists($script:HostsPath)) {
+                $existing = [System.IO.File]::ReadAllLines($script:HostsPath)
+            }
+            $newLines = & $Mutator $existing @MutatorArgs
+            if ($null -eq $newLines) { return }
+            # Only rewrite if content actually changed - avoids needless file handles
+            $newText = ($newLines -join "`r`n")
+            if ($newText.Length -gt 0 -and -not $newText.EndsWith("`r`n")) { $newText += "`r`n" }
+            $oldText = if ($existing -and $existing.Count -gt 0) { ($existing -join "`r`n") + "`r`n" } else { '' }
+            if ($newText -eq $oldText) { return }
+            [System.IO.File]::WriteAllText($script:HostsPath, $newText, [System.Text.Encoding]::ASCII)
+            return
+        } catch {
+            $lastError = $_
+            $attempts++
+            if ($attempts -ge $maxAttempts) { throw }
+            Start-Sleep -Milliseconds (150 * $attempts)
+        }
+    }
+    if ($lastError) { throw $lastError }
+}
+
 function Add-BlockDomain {
     param([Parameter(Mandatory)][string]$Domain)
     if ($script:SupportsFqdn) {
@@ -189,8 +241,11 @@ function Add-BlockDomain {
         }
     } else {
         $line4 = "0.0.0.0 $Domain $script:HostsMarker"
-        $hosts = Get-Content $script:HostsPath -ErrorAction Stop
-        if ($hosts -notcontains $line4) { Add-Content -Path $script:HostsPath -Value $line4 }
+        Invoke-HostsFileMutation -Mutator ({
+            param($lines, $lineToAdd)
+            if ($lines -contains $lineToAdd) { return $null }  # no change
+            return @($lines) + $lineToAdd
+        }) -MutatorArgs @($line4)
     }
 }
 function Remove-BlockDomain {
@@ -200,12 +255,14 @@ function Remove-BlockDomain {
         $r = Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue
         if ($r) { $r | Remove-NetFirewallRule | Out-Null }
     } else {
-        if (Test-Path $script:HostsPath) {
-            $escaped = [regex]::Escape($Domain)
-            (Get-Content $script:HostsPath) |
-                Where-Object { $_ -notmatch "^\s*0\.0\.0\.0\s+$escaped\s+$([regex]::Escape($script:HostsMarker))\s*$" } |
-                Set-Content $script:HostsPath
-        }
+        if (-not [System.IO.File]::Exists($script:HostsPath)) { return }
+        $escaped = [regex]::Escape($Domain)
+        $pattern = "^\s*0\.0\.0\.0\s+$escaped\s+$([regex]::Escape($script:HostsMarker))\s*$"
+        Invoke-HostsFileMutation -Mutator ({
+            param($lines, $pat)
+            $kept = $lines | Where-Object { $_ -notmatch $pat }
+            return ,@($kept)
+        }) -MutatorArgs @($pattern)
     }
 }
 
@@ -358,12 +415,28 @@ function Invoke-GameDVR {
 
 function Invoke-Widgets {
     param([bool]$Revert)
+    # The HKLM Dsh\AllowNewsAndInterests policy is the authoritative kill;
+    # once it is enforced, Windows 11 24H2 may protect the cosmetic per-user
+    # HKCU TaskbarDa value and return "operation not allowed" on write. The
+    # policy alone already hides the button, so downgrade the HKCU failure
+    # to a WARN instead of confusing users with a FAIL.
+    $taskbarDa = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
     if ($Revert) {
         Invoke-Safely { Remove-RegValue 'HKLM:\SOFTWARE\Policies\Microsoft\Dsh' 'AllowNewsAndInterests' } "Widgets policy cleared"
-        Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarDa' 'DWord' 1 } "Widgets taskbar button on"
+        try {
+            Set-Reg $taskbarDa 'TaskbarDa' 'DWord' 1
+            Write-OK "Widgets taskbar button on"
+        } catch {
+            Write-Warn "Widgets taskbar button (HKCU) unchanged - policy-enforced: $($_.Exception.Message)"
+        }
     } else {
         Invoke-Safely { Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Dsh' 'AllowNewsAndInterests' 'DWord' 0 } "Widgets policy off"
-        Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarDa' 'DWord' 0 } "Widgets taskbar button off"
+        try {
+            Set-Reg $taskbarDa 'TaskbarDa' 'DWord' 0
+            Write-OK "Widgets taskbar button off"
+        } catch {
+            Write-Warn "Widgets taskbar button (HKCU) unchanged - HKLM policy above is already authoritative: $($_.Exception.Message)"
+        }
     }
 }
 
@@ -561,12 +634,36 @@ function Invoke-CopilotNative {
     Invoke-Safely { Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableConsumerAccountStateContent' 'DWord' $d } "Settings home ads"
 
     # --- Gaming Copilot ---
+    # This key lives under HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId
+    # which is owned by NT SERVICE\TrustedInstaller. A plain elevated admin
+    # cannot create subkeys or values there without first taking ownership,
+    # which is risky (can break Windows Update integrity). Downgrade to a
+    # WARN so we don't spam FAIL for an expected limitation, and let users
+    # fall back to zoicware/RemoveWindowsAI source-redist for the hard block.
     $gamingKey = 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Microsoft.Xbox.GamingAI.Companion.Host.GamingCompanionHostOptions'
     if ($Revert) {
-        Invoke-Safely { Remove-Item -Path $gamingKey -Force -ErrorAction SilentlyContinue } "Gaming Copilot restored"
+        try {
+            if (Test-Path $gamingKey) {
+                Remove-Item -Path $gamingKey -Recurse -Force -ErrorAction Stop
+            }
+            Write-OK "Gaming Copilot restored"
+        } catch {
+            Write-Warn "Gaming Copilot key cleanup skipped (TrustedInstaller-protected): $($_.Exception.Message)"
+        }
     } else {
-        Invoke-Safely { Set-Reg $gamingKey 'ActivationType' 'DWord' 0 } "Gaming Copilot blocked"
-        Invoke-Safely { Set-Reg $gamingKey 'Server'         'String' ' ' } "Gaming Copilot server cleared"
+        try {
+            Set-Reg $gamingKey 'ActivationType' 'DWord' 0
+            Set-Reg $gamingKey 'Server'         'String' ' '
+            Write-OK "Gaming Copilot blocked"
+        } catch {
+            if ($_.Exception -is [System.UnauthorizedAccessException] -or
+                $_.Exception.Message -match 'refus|denied|unauthorized|not allowed|non autoris') {
+                Write-Warn "Gaming Copilot registry block skipped - key is TrustedInstaller-protected."
+                Write-Warn "    Use zoicware/RemoveWindowsAI source redist for a full takeover."
+            } else {
+                Write-FAIL "Gaming Copilot: $($_.Exception.Message)"
+            }
+        }
     }
 
     # --- Voice Access (registry only - file removal needs TrustedInstaller) ---
