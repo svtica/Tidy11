@@ -87,7 +87,33 @@ foreach ($n in 'CopilotEnabled','AIFeaturesEnabled','ShowAIFeatures') {
 # ============================================================================
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAl'              'DWord' 0  # 0=left, 1=center
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'ShowTaskViewButton'     'DWord' 0
-Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'            'SearchboxTaskbarMode'   'DWord' 2  # icon+label
+# SearchboxTaskbarMode (0=hidden, 1=icon, 2=icon+label, 3=box) is a purely
+# cosmetic user choice. Forcing it to 2 surfaced a large "Search" pill for
+# users who had it minimized or hidden, so we now leave the live value alone
+# and just stash it under HKCU\Software\Tidy11\UserPrefs so a later GUI
+# revert can put back whatever was there before.
+try {
+    $searchKey  = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'
+    $stashKey   = 'HKCU:\Software\Tidy11\UserPrefs'
+    $stashName  = 'HKCU__Software_Microsoft_Windows_CurrentVersion_Search__SearchboxTaskbarMode'
+    $absentName = "${stashName}__absent"
+    if (!(Test-Path $stashKey)) { New-Item -Path $stashKey -Force | Out-Null }
+    $alreadyStashed = $false
+    $probe = Get-ItemProperty -Path $stashKey -Name $stashName  -ErrorAction SilentlyContinue
+    if ($probe -and $null -ne $probe.$stashName) { $alreadyStashed = $true }
+    $probeAbs = Get-ItemProperty -Path $stashKey -Name $absentName -ErrorAction SilentlyContinue
+    if ($probeAbs -and $null -ne $probeAbs.$absentName) { $alreadyStashed = $true }
+    if (-not $alreadyStashed) {
+        $current = (Get-ItemProperty -Path $searchKey -Name 'SearchboxTaskbarMode' -ErrorAction SilentlyContinue).SearchboxTaskbarMode
+        if ($null -ne $current) {
+            New-ItemProperty -Path $stashKey -Name $stashName  -PropertyType DWord -Value ([int]$current) -Force | Out-Null
+        } else {
+            New-ItemProperty -Path $stashKey -Name $absentName -PropertyType DWord -Value 1              -Force | Out-Null
+        }
+    }
+} catch {
+    Write-Output "WARN SearchboxTaskbarMode preference stash failed: $($_.Exception.Message)"
+}
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_TrackDocs'        'DWord' 0
 Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_TrackProgs'       'DWord' 0
 Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\Explorer'                'HideRecommendedSection' 'DWord' 1
