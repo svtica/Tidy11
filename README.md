@@ -18,7 +18,7 @@ No runtime network dependency. No telemetry of its own. No code you can't read.
 
 ## Disclaimer — read before running
 
-**Tidy11 is intended for power users who know what they are doing.** It makes deep changes to Windows policy, services, scheduled tasks, firewall rules, and Appx packages. If you don't understand what a setting does, read [`Tidy11-Changes-Reference.md`](Tidy11-Changes-Reference.md) first, or don't tick that box.
+**Tidy11 is intended for power users who know what they are doing.** It makes deep changes to Windows policy, services, scheduled tasks, firewall rules, and Appx packages. If you don't understand what a setting does, read [`Tidy11-Reference.md`](Tidy11-Reference.md) first, or don't tick that box.
 
 - **No warranty.** This software is provided **as is**, without warranty of any kind, express or implied. You run it at your own risk.
 - **No support.** There is no help desk, no SLA, no guarantee that issues will be answered or fixed. The GitHub issue tracker is not monitored — **do not open issues**; they will not be triaged.
@@ -79,7 +79,7 @@ If anything goes wrong, you have three independent rollback paths:
 | `Tidy11-User.ps1` | Intune user-context companion — HKCU keys for existing profiles | Logged-on user |
 | `Tidy11.reg` | Static registry baseline for GPO Preferences / offline import | Admin |
 | `Tidy11-Revert.reg` | Reverse of `Tidy11.reg` — deletes the policy values to restore defaults | Admin |
-| `Tidy11-Changes-Reference.md` | Per-setting reference (paths, default values, proposed values, risk class) | Documentation |
+| `Tidy11-Reference.md` | Per-setting reference (paths, default values, proposed values, risk class) | Documentation |
 | `LICENSE` | The Unlicense | — |
 
 ---
