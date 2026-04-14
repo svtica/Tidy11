@@ -695,18 +695,29 @@ $script:WingetAlternatives = @{
 }
 
 function Install-WingetPackage {
-    param([string]$Id, [string]$DisplayName)
+    param(
+        [string]$Id,
+        [string]$DisplayName,
+        [ValidateSet('winget','msstore')][string]$Source = 'winget'
+    )
     try {
-        $w = Get-Command winget -ErrorAction Stop
+        $null = Get-Command winget -ErrorAction Stop
     } catch {
         Write-FAIL "winget not available on this machine. Install App Installer from the Microsoft Store."
         return
     }
+    # winget exit codes that mean "no install needed, treat as success":
+    #   0x00000000  0           -> installed
+    #   0x8A150011  -1978335215 -> APPINSTALLER_CLI_ERROR_INSTALL_ALREADY_INSTALLED
+    #   0x8A15002B  -1978335189 -> APPINSTALLER_CLI_ERROR_NO_APPLICABLE_UPGRADE (already current)
+    #   0x8A15010E  -1978334962 -> APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE
+    $okCodes = @(0, -1978335215, -1978335189, -1978334962)
     try {
-        Write-Info "winget installing $DisplayName ($Id)..."
-        & winget install --id $Id --silent --accept-package-agreements --accept-source-agreements -e 2>&1 |
-            ForEach-Object { Write-Log $_ 'WINGET' }
-        if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq -1978335189) {  # success or already installed
+        Write-Info "winget installing $DisplayName ($Id) from source '$Source'..."
+        & winget install --id $Id --source $Source --silent `
+            --accept-package-agreements --accept-source-agreements -e *>&1 |
+            ForEach-Object { Write-Log "$_" 'WINGET' }
+        if ($okCodes -contains $LASTEXITCODE) {
             Write-OK "winget: $DisplayName installed (or already present)"
         } else {
             Write-FAIL "winget $Id exit code $LASTEXITCODE"
@@ -757,30 +768,95 @@ function Install-ClassicPhotoViewerNative {
     Write-OK "Classic Photo Viewer file associations restored"
 }
 
+function Install-ModernUwpFallback {
+    # Microsoft does NOT ship the classic Win32 mspaint.exe / SnippingTool.exe on
+    # Windows 11. The closest "native" Microsoft-distributed equivalents are the
+    # modern UWP Store apps. This helper reports if the UWP version is already
+    # installed, otherwise installs it from the Microsoft Store, and logs that
+    # this is NOT the classic Win32 binary.
+    param(
+        [Parameter(Mandatory)][string]$AppxPattern,
+        [Parameter(Mandatory)][string]$StoreId,
+        [Parameter(Mandatory)][string]$DisplayName,
+        [Parameter(Mandatory)][string]$ClassicExeName
+    )
+    $appx = Get-AppxPackage -Name $AppxPattern -AllUsers -ErrorAction SilentlyContinue
+    if ($appx) {
+        Write-OK "$DisplayName already present: $($appx[0].PackageFullName)"
+        Write-Info "Native method cannot install the classic Win32 $ClassicExeName - use Source Redist for that."
+        return
+    }
+    Write-Info "$DisplayName not found - installing from Microsoft Store..."
+    Install-WingetPackage -Id $StoreId -DisplayName $DisplayName -Source msstore
+    Write-Info "Native method installs $DisplayName, not the classic Win32 $ClassicExeName. Use Source Redist if you need the classic binary."
+}
+
 function Install-PhotosLegacyNative {
     $appx = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue | Where-Object { $_.PackageFullName -like '*PhotosLegacy*' }
     if ($appx) {
         Write-OK "Photos Legacy already installed"
         return
     }
-    # Prefer modern store cmdlet if available (PS 7+ with winget cmdlets)
+    # Microsoft Store has the legacy Photos package - install via winget msstore source.
     try {
-        if (Get-Command store -ErrorAction Stop) {
-            & store install 9NV2L4XVMCXM
-            Write-OK "Photos Legacy installed via store cmdlet"
-            return
-        }
-    } catch {}
-    # Fallback: winget (Microsoft Store source)
+        $null = Get-Command winget -ErrorAction Stop
+    } catch {
+        Write-FAIL "Photos Legacy install failed - winget not available. Open Microsoft Store and search 'Microsoft Photos Legacy'."
+        return
+    }
+    Install-WingetPackage -Id '9NV2L4XVMCXM' -DisplayName 'Microsoft Photos Legacy' -Source msstore
+}
+
+$script:RedistValidApps = @('photoviewer','mspaint','snippingtool','notepad','photoslegacy')
+
+function Invoke-SourceRedistOneApp {
+    param(
+        [Parameter(Mandatory)][string]$App,
+        [Parameter(Mandatory)][ValidateSet('Online','Local')][string]$Source,
+        [string]$LocalScript
+    )
+    if ($script:RedistValidApps -notcontains $App) {
+        Write-FAIL "Source Redist: '$App' is not a valid upstream classic app"
+        return
+    }
     try {
-        if (Get-Command winget -ErrorAction Stop) {
-            & winget install --id 9NV2L4XVMCXM --source msstore --accept-package-agreements --accept-source-agreements -e 2>&1 |
-                ForEach-Object { Write-Log $_ 'WINGET' }
-            Write-OK "Photos Legacy installed via winget (msstore)"
-            return
+        if ($Source -eq 'Local') {
+            # Run the on-disk upstream script via a child powershell.exe.
+            # IMPORTANT: pass the app as a single positional value - powershell.exe -File
+            # does NOT split comma-separated values into arrays, so we install one app
+            # per child invocation to keep ValidateSet binding unambiguous.
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $LocalScript `
+                -nonInteractive -InstallClassicApps $App *>&1 |
+                ForEach-Object { Write-Log "$_" 'REDIST' }
+            if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+                Write-FAIL "Source Redist Local: upstream script exited with code $LASTEXITCODE for '$App'"
+            } else {
+                Write-OK "Source Redist Local: '$App' install step completed"
+            }
+        } else {
+            # Online - download upstream script text and execute it as a scriptblock
+            # in this admin process. We do one app per invocation so each install runs
+            # cleanly and any failure is attributed to a specific app in the log.
+            $url = 'https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1'
+            $scriptText = $null
+            try {
+                $scriptText = Invoke-RestMethod -Uri $url -UseBasicParsing -ErrorAction Stop
+            } catch {
+                Write-FAIL "Source Redist Online: failed to fetch upstream script: $($_.Exception.Message)"
+                return
+            }
+            if ([string]::IsNullOrWhiteSpace($scriptText)) {
+                Write-FAIL "Source Redist Online: upstream script body was empty"
+                return
+            }
+            $upstream = [scriptblock]::Create($scriptText)
+            & $upstream -nonInteractive -InstallClassicApps $App *>&1 |
+                ForEach-Object { Write-Log "$_" 'REDIST' }
+            Write-OK "Source Redist Online: '$App' install step completed"
         }
-    } catch {}
-    Write-FAIL "Photos Legacy install failed - no supported installer found. Open Microsoft Store and search 'Microsoft Photos Legacy'."
+    } catch {
+        Write-FAIL "Source Redist ($Source) failed for '$App': $($_.Exception.Message)"
+    }
 }
 
 function Invoke-SourceRedistClassicApps {
@@ -789,6 +865,11 @@ function Invoke-SourceRedistClassicApps {
         [ValidateSet('Online','Local')][string]$Source,
         [string]$LocalPath
     )
+    if (-not $Apps -or $Apps.Count -eq 0) {
+        Write-Info "Source Redist: no apps requested"
+        return
+    }
+
     Write-Warn '=========================================================='
     Write-Warn ' SOURCE REDIST CLASSIC APPS - the following step downloads'
     Write-Warn ' and runs zoicware/RemoveWindowsAI (MIT-licensed) in order'
@@ -797,10 +878,10 @@ function Invoke-SourceRedistClassicApps {
     Write-Warn ' the upstream project. You are opting in explicitly.'
     Write-Warn '=========================================================='
 
-    $argList = @('-nonInteractive','-InstallClassicApps',($Apps -join ','))
-
-    # If user has a local ClassicApps folder + a local copy of RemoveWindowsAi.ps1,
-    # run it fully offline. If anything is missing, fail with clear instructions.
+    # Pre-flight for Local mode: both the script AND the ClassicApps payload
+    # must already be staged next to Tidy11.ps1. We fail fast with clear
+    # remediation steps so the user is not left guessing.
+    $localScript = $null
     if ($Source -eq 'Local') {
         if (-not $LocalPath) {
             Write-FAIL 'Source Redist Local: no LocalPath provided.'
@@ -819,22 +900,11 @@ function Invoke-SourceRedistClassicApps {
             Write-FAIL 'This mode is strictly offline and will NOT fetch anything at runtime.'
             return
         }
-        try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $localScript @argList 2>&1 |
-                ForEach-Object { Write-Log $_ 'REDIST' }
-        } catch {
-            Write-FAIL "Source Redist Local run failed: $($_.Exception.Message)"
-        }
-    } else {
-        # Online - upstream script will download its own ClassicApps to TEMP
-        try {
-            $sb = [scriptblock]::Create(
-                "& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1'))) $($argList -join ' ')"
-            )
-            & $sb 2>&1 | ForEach-Object { Write-Log $_ 'REDIST' }
-        } catch {
-            Write-FAIL "Source Redist Online invocation failed: $($_.Exception.Message)"
-        }
+    }
+
+    foreach ($app in $Apps) {
+        Write-Info "Source Redist ($Source): installing '$app'..."
+        Invoke-SourceRedistOneApp -App $app -Source $Source -LocalScript $localScript
     }
 }
 
@@ -869,8 +939,20 @@ function Invoke-ClassicApps {
                     'notepad'      { Install-ClassicNotepadNative }
                     'photoviewer'  { Install-ClassicPhotoViewerNative }
                     'photoslegacy' { Install-PhotosLegacyNative }
-                    'mspaint'      { Write-Warn "mspaint: no native path (Microsoft removed the binaries from Win11). Use Winget (Paint.NET) or Source Redist methods." }
-                    'snippingtool' { Write-Warn "snippingtool: no native path. Use Winget (ShareX) or Source Redist methods." }
+                    'mspaint'      {
+                        Install-ModernUwpFallback `
+                            -AppxPattern 'Microsoft.Paint*' `
+                            -StoreId '9PCFS5B6T72H' `
+                            -DisplayName 'Microsoft Paint (UWP)' `
+                            -ClassicExeName 'mspaint.exe'
+                    }
+                    'snippingtool' {
+                        Install-ModernUwpFallback `
+                            -AppxPattern 'Microsoft.ScreenSketch*' `
+                            -StoreId '9MZ95KL8MR0L' `
+                            -DisplayName 'Snipping Tool (UWP)' `
+                            -ClassicExeName 'SnippingTool.exe'
+                    }
                 }
             }
         }
