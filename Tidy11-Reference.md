@@ -203,8 +203,8 @@ Disables Bing Search, Cortana consent, web search policy, search-box suggestions
 |---|---|---|
 | **Skip** | 🟢 | Default. No-op. |
 | **Winget** | 🟢 | Installs Notepad++, Paint.NET, ShareX, IrfanView. Cleanest legal path. |
-| **Native** | 🟢 | Classic Notepad (FoD), Photo Viewer (registry restore), Photos Legacy (Store). No Paint/Snipping — no Microsoft source exists. |
-| **Source Redist Online** | 🟡 | Fetches `zoicware/RemoveWindowsAI` at runtime and runs `-InstallClassicApps`. Redistributes Microsoft binaries (gray legal zone). Needs internet. |
+| **Native** | 🟢 | Classic Notepad (FoD), Photo Viewer (registry restore), Photos Legacy (Store). For Paint/Snipping: installs the modern UWP Microsoft Store builds (`9PCFS5B6T72H` / `9MZ95KL8MR0L`) — **not** the classic Win32 binaries. Use Source Redist if you need the classic ones. |
+| **Source Redist Online** | 🟡 | Fetches `zoicware/RemoveWindowsAI` at runtime and runs `-InstallClassicApps` once per selected app. Redistributes Microsoft binaries (gray legal zone). Needs internet. |
 | **Source Redist Local** | 🟡 | Same legal posture, fully offline — requires pre-staged `RemoveWindowsAi.ps1` + `ClassicApps/` folder next to `Tidy11.ps1`. Fails fast if missing. |
 
 Recommendation for enterprise: **Winget** or **Native**. Source Redist methods are for personal machines where you specifically want classic Win10 binaries.
