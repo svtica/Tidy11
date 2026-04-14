@@ -162,6 +162,91 @@ function Test-RegValue {
     } catch { return $false }
 }
 
+# --- User preference stash --------------------------------------------------
+# Some values Tidy11 used to overwrite ("taskbar cleanup") are actually
+# cosmetic user preferences (e.g. SearchboxTaskbarMode: 0=hidden, 1=icon,
+# 2=icon+label, 3=box). Forcing those to a fixed value surfaces a large
+# Windows search button for users who had it minimized or hidden. We now
+# stash the original value under HKCU\Software\Tidy11\UserPrefs on the
+# apply pass and restore it on the revert pass, so the user's preference
+# survives both directions.
+$script:Tidy11UserPrefsKey = 'HKCU:\Software\Tidy11\UserPrefs'
+
+function ConvertTo-Tidy11StashName {
+    param([Parameter(Mandatory)][string]$Path,[Parameter(Mandatory)][string]$Name)
+    # Flatten the full reg path into a single value name so every stashed
+    # preference lives as one property under the Tidy11 UserPrefs key.
+    (($Path -replace '[^A-Za-z0-9]','_') + '__' + $Name)
+}
+
+function Save-UserPreference {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Name
+    )
+    $stashName  = ConvertTo-Tidy11StashName -Path $Path -Name $Name
+    $absentName = "${stashName}__absent"
+
+    if (-not (Test-Path $script:Tidy11UserPrefsKey)) {
+        New-Item -Path $script:Tidy11UserPrefsKey -Force -ErrorAction Stop | Out-Null
+    }
+
+    # Never clobber an existing stash - the first capture is the most
+    # authoritative snapshot of what the user really had before Tidy11.
+    $haveValueStash  = $false
+    $haveAbsentStash = $false
+    try {
+        $probe = Get-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $stashName -ErrorAction SilentlyContinue
+        if ($probe -and $null -ne $probe.$stashName) { $haveValueStash = $true }
+    } catch {}
+    try {
+        $probeAbsent = Get-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $absentName -ErrorAction SilentlyContinue
+        if ($probeAbsent -and $null -ne $probeAbsent.$absentName) { $haveAbsentStash = $true }
+    } catch {}
+    if ($haveValueStash -or $haveAbsentStash) { return }
+
+    $current = $null
+    try {
+        $current = (Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue).$Name
+    } catch {}
+
+    if ($null -ne $current) {
+        New-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $stashName `
+            -PropertyType DWord -Value ([int]$current) -Force -ErrorAction Stop | Out-Null
+    } else {
+        # Mark "value didn't exist" so revert can delete it instead of guessing.
+        New-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $absentName `
+            -PropertyType DWord -Value 1 -Force -ErrorAction Stop | Out-Null
+    }
+}
+
+function Restore-UserPreference {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Name
+    )
+    if (-not (Test-Path $script:Tidy11UserPrefsKey)) { return $false }
+    $stashName  = ConvertTo-Tidy11StashName -Path $Path -Name $Name
+    $absentName = "${stashName}__absent"
+
+    $absent = Get-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $absentName -ErrorAction SilentlyContinue
+    if ($absent -and $null -ne $absent.$absentName) {
+        if (Test-Path $Path) {
+            Remove-ItemProperty -Path $Path -Name $Name -Force -ErrorAction SilentlyContinue
+        }
+        Remove-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $absentName -Force -ErrorAction SilentlyContinue
+        return $true
+    }
+
+    $stashed = Get-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $stashName -ErrorAction SilentlyContinue
+    if ($stashed -and $null -ne $stashed.$stashName) {
+        Set-Reg $Path $Name 'DWord' ([int]$stashed.$stashName)
+        Remove-ItemProperty -Path $script:Tidy11UserPrefsKey -Name $stashName -Force -ErrorAction SilentlyContinue
+        return $true
+    }
+    return $false
+}
+
 function Disable-Svc {
     param([string]$Name)
     if (Get-Service -Name $Name -ErrorAction SilentlyContinue) {
@@ -478,11 +563,27 @@ function Invoke-TaskbarTweaks {
     param([bool]$Revert)
     $d = if ($Revert) { 1 } else { 0 }
     $left = if ($Revert) { 1 } else { 0 }   # 1 = center (default), 0 = left
-    $searchMode = if ($Revert) { 1 } else { 2 }
     $hideRec = 1 - $d
+
+    # --- SearchboxTaskbarMode: preserve the user's cosmetic preference ------
+    # Values: 0=hidden, 1=icon only, 2=icon+label, 3=full search box.
+    # Previously Tidy11 forced this to 2 on apply, which surfaced a large
+    # "Search" pill for users who had it minimized (1) or hidden (0). We now
+    # stash the original on apply and restore it on revert - and we leave the
+    # live value alone on apply so the user's taskbar footprint does not grow.
+    $searchPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'
+    if ($Revert) {
+        Invoke-Safely {
+            if (-not (Restore-UserPreference -Path $searchPath -Name 'SearchboxTaskbarMode')) {
+                Write-Info "Search box mode: no stashed preference to restore (leaving as-is)"
+            }
+        } "Search box mode (user preference restored)"
+    } else {
+        Invoke-Safely { Save-UserPreference -Path $searchPath -Name 'SearchboxTaskbarMode' } "Search box mode (user preference saved)"
+    }
+
     Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAl'           'DWord' $left }        "Taskbar alignment"
     Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'ShowTaskViewButton'  'DWord' $d }           "Task View button"
-    Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'            'SearchboxTaskbarMode' 'DWord' $searchMode } "Search box mode"
     Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_TrackDocs'     'DWord' $d }           "Recent docs tracking"
     Invoke-Safely { Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\Explorer'                 'HideRecommendedSection' 'DWord' $hideRec } "Hide Start Recommended"
     Invoke-Safely { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer' 'HideSCAMeetNow'       'DWord' $hideRec }    "Hide Meet Now"
