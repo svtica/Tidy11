@@ -183,7 +183,7 @@ Or drop `Tidy11.reg` into your reference image's `FirstLogonCommands` via unatte
 
 ## What Tidy11 removes or disables
 
-Items are grouped by category. Full per-setting reference with registry paths and default values is in [`Tidy11-Changes-Reference.md`](Tidy11-Changes-Reference.md).
+Items are grouped by category. Full per-setting reference with registry paths and default values is in [`Tidy11-Reference.md`](Tidy11-Reference.md).
 
 | Category | Targets |
 |---|---|
