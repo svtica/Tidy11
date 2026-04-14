@@ -432,7 +432,17 @@ $cb.btnRestoreSnap.Add_Click({
             "Restore from:`n$($dlg.SelectedPath)`n`nThis imports the saved registry exports, re-enables snapshotted services and tasks, and removes PrivacyBlock-* firewall rules. Reboot recommended afterwards.`n`nProceed?",
             'Confirm restore', 'YesNo', 'Warning')
         if ($confirm -eq 'Yes') {
-            Restore-Tidy11Snapshot -SnapshotPath $dlg.SelectedPath
+            try {
+                Restore-Tidy11Snapshot -SnapshotPath $dlg.SelectedPath
+                [System.Windows.MessageBox]::Show(
+                    "Restore finished. The snapshot has been applied.`n`nReboot recommended for all changes to settle.",
+                    'Tidy11 - Restore complete', 'OK', 'Information') | Out-Null
+            } catch {
+                Write-Log "Restore FATAL: $($_.Exception.Message)" 'FAIL'
+                [System.Windows.MessageBox]::Show(
+                    "Restore stopped early because of an error. See the log window for details.",
+                    'Tidy11 - Restore complete (with errors)', 'OK', 'Error') | Out-Null
+            }
         }
     }
 })
@@ -443,6 +453,7 @@ $runAction = {
     $cb.btnDisable.IsEnabled = $false
     $cb.btnRevert.IsEnabled  = $false
     $cb.btnVerify.IsEnabled  = $false
+    $runSucceeded = $false
     try {
         Write-Log ('=' * 70)
         $phase = if ($isRevert) { 'REVERT pass' } else { 'DISABLE pass' }
@@ -533,18 +544,38 @@ $runAction = {
         }
 
         Write-Log ''
-        Write-Log 'Done. Reboot recommended for all changes to settle.'
+        Write-Log ('=' * 70)
+        Write-Log "$phase COMPLETE - all selected categories processed."
+        Write-Log 'Reboot recommended for all changes to settle.'
+        Write-Log ('=' * 70)
 
         # Persist net-new-value list so a restore can cleanly remove them
         if (-not $isRevert) {
             try { Save-CreatedValuesLog } catch { Write-Log "Save-CreatedValuesLog: $($_.Exception.Message)" 'WARN' }
         }
+        $runSucceeded = $true
     } catch {
         Write-Log "FATAL: $($_.Exception.Message)" 'FAIL'
     } finally {
         $cb.btnDisable.IsEnabled = $true
         $cb.btnRevert.IsEnabled  = $true
         $cb.btnVerify.IsEnabled  = $true
+
+        # Explicit completion popup - the log alone is too easy to miss and
+        # users have mistaken a finished pass for one that is still running.
+        $doneTitle = if ($isRevert) { 'Tidy11 - REVERT complete' } else { 'Tidy11 - DISABLE complete' }
+        if ($runSucceeded) {
+            $doneMsg = if ($isRevert) {
+                "REVERT pass finished. All selected categories have been rolled back to Microsoft defaults.`n`nReboot recommended for all changes to settle."
+            } else {
+                "DISABLE pass finished. All selected categories have been processed.`n`nReboot recommended for all changes to settle."
+            }
+            [System.Windows.MessageBox]::Show($doneMsg, $doneTitle, 'OK', 'Information') | Out-Null
+        } else {
+            [System.Windows.MessageBox]::Show(
+                "The pass stopped early because of an error. See the log window for details.",
+                "$doneTitle (with errors)", 'OK', 'Error') | Out-Null
+        }
     }
 }
 
