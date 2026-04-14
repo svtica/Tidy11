@@ -715,9 +715,23 @@ function Install-WingetPackage {
     $okCodes = @(0, -1978335215, -1978335189, -1978334962)
     try {
         Write-Info "winget installing $DisplayName ($Id) from source '$Source'..."
-        & winget install --id $Id --source $Source --silent `
+        # winget emits animated spinners (- \ | /), percent counters and
+        # block-character progress bars. When those are piped line-by-line
+        # through Write-Log they flood the console with hundreds of junk
+        # lines (and mojibake on non-UTF8 consoles). Filter them out and
+        # keep only the real status messages ("Found ...", "Downloading ...",
+        # "Successfully installed", etc.).
+        & winget install --id $Id --source $Source --silent --disable-interactivity `
             --accept-package-agreements --accept-source-agreements -e *>&1 |
-            ForEach-Object { Write-Log "$_" 'WINGET' }
+            ForEach-Object {
+                $text = "$_".Trim()
+                if (-not $text)                                                                   { return }
+                if ($text -match '^[\\/|\-]+$')                                                   { return }  # spinner
+                if ($text -match '^\d+(\.\d+)?\s*%$')                                             { return }  # bare percent
+                if ($text -match '^[\d.]+\s*(B|KB|MB|GB|TB)\s*/\s*[\d.]+\s*(B|KB|MB|GB|TB)$')     { return }  # size/size
+                if ($text -match '[^\x20-\x7E]')                                                  { return }  # any non-ASCII (block-char progress bars)
+                Write-Log $text 'WINGET'
+            }
         if ($okCodes -contains $LASTEXITCODE) {
             Write-OK "winget: $DisplayName installed (or already present)"
         } else {
