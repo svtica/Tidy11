@@ -687,11 +687,12 @@ function Invoke-CopilotNative {
 #                                           Gray zone - user opt-in.
 # ============================================================================
 $script:WingetAlternatives = @{
-    'notepad'      = @{ Id = 'Notepad++.Notepad++';    Name = 'Notepad++' }
-    'mspaint'      = @{ Id = 'dotPDN.PaintDotNet';     Name = 'Paint.NET' }
-    'snippingtool' = @{ Id = 'ShareX.ShareX';          Name = 'ShareX' }
-    'photoviewer'  = @{ Id = 'IrfanSkiljan.IrfanView'; Name = 'IrfanView' }
-    'photoslegacy' = @{ Id = 'IrfanSkiljan.IrfanView'; Name = 'IrfanView' }
+    'notepad'      = @{ Id = 'Notepad++.Notepad++';         Name = 'Notepad++' }
+    'mspaint'      = @{ Id = 'dotPDN.PaintDotNet';          Name = 'Paint.NET' }
+    'snippingtool' = @{ Id = 'ShareX.ShareX';               Name = 'ShareX' }
+    'photoviewer'  = @{ Id = 'IrfanSkiljan.IrfanView';      Name = 'IrfanView' }
+    'photoslegacy' = @{ Id = 'IrfanSkiljan.IrfanView';      Name = 'IrfanView' }
+    'classicshell' = @{ Id = 'Open-Shell.Open-Shell-Menu';  Name = 'Open-Shell Menu (Classic Shell successor)' }
 }
 
 function Install-WingetPackage {
@@ -938,8 +939,27 @@ function Invoke-ClassicApps {
         [string[]]$Apps = @(),
         [string]$LocalPath = $null
     )
-    if ($Method -eq 'Skip' -or $Apps.Count -eq 0) {
+    if ($Apps.Count -eq 0) {
         Write-Info "Classic apps: nothing to do"
+        return
+    }
+
+    # Open-Shell / Classic Shell successor is freeware (MIT) and is ONLY
+    # distributed via winget. It is not a Microsoft-sourced app and is not in
+    # the upstream zoicware Source Redist payload, so regardless of the
+    # selected method we install it via winget and strip it from the list
+    # that gets handed to the method-specific path below. This also means
+    # Open-Shell can be installed even when Method='Skip' - it does not care.
+    if ($Apps -contains 'classicshell') {
+        Write-Info 'Open-Shell (Classic Shell successor) always installs via winget - third-party freeware (MIT).'
+        if ($script:WingetAlternatives.ContainsKey('classicshell')) {
+            $alt = $script:WingetAlternatives['classicshell']
+            Install-WingetPackage -Id $alt.Id -DisplayName $alt.Name
+        }
+        $Apps = @($Apps | Where-Object { $_ -ne 'classicshell' })
+    }
+
+    if ($Method -eq 'Skip' -or $Apps.Count -eq 0) {
         return
     }
     Write-Info "Classic apps: method=$Method, apps=$($Apps -join ',')"

@@ -21,7 +21,7 @@ No runtime network dependency. No telemetry of its own. No code you can't read.
 - **Copilot / AI removal**: Windows Copilot, Recall, Click To Do, Paint AI, Edge Copilot, Office Copilot, Notepad AI, Voice Access, generative-AI app privacy gates.
 - **Privacy**: telemetry (DiagTrack + scheduled tasks + FQDN firewall blocks), advertising ID, activity history, location, tailored experiences, feedback prompts, typing data harvesting.
 - **System cleanup**: Widgets, Bing/Cortana in Start, Xbox services (optional), Game DVR (optional), classic Win10 context menu, taskbar cleanup, Edge first-run, Office telemetry.
-- **Classic apps**: four installation methods for replacing removed Win11 apps (Winget, Microsoft-native, Source Redist Online, Source Redist Local) with per-app choice.
+- **Classic apps**: four installation methods for replacing removed Win11 apps (Winget, Microsoft-native, Source Redist Online, Source Redist Local) with per-app choice. Optional opt-in install of **Open-Shell** (the freeware MIT-licensed successor to Classic Shell / Classic Start Menu) for users who want a Win7-style Start menu.
 - **Two rollback layers** before any change:
   - Windows System Restore point (enabled automatically if disabled).
   - Tidy11's own snapshot with registry exports, services, scheduled tasks, firewall rules, `hosts` backup, and a net-new-value log for clean deletion.
@@ -40,6 +40,8 @@ No runtime network dependency. No telemetry of its own. No code you can't read.
    - ☑ Create Windows System Restore point
    - ☑ Create Tidy11 snapshot BEFORE applying changes
 5. Click **DISABLE Selected**. Reboot when done.
+
+> **Note on the button label:** `DISABLE Selected` is also what runs the **Classic App Replacements** section — i.e. it is both the "remove Copilot/telemetry/ads" trigger *and* the "install classic apps (Notepad, Paint, Open-Shell, …)" trigger, all in one pass. `REVERT Selected` undoes the disables but does **not** uninstall apps you installed via the Classic Apps section — those have to be removed manually (Settings → Apps or `winget uninstall`).
 
 If anything goes wrong, you have three independent rollback paths:
 
@@ -249,6 +251,8 @@ Tidy11 treats your checkbox selections as a **recipe** you can save, copy to ano
 
 The GUI has a dedicated section with 5 radio buttons — pick one method, then tick the apps you want.
 
+> **Heads up:** the Classic Apps installs are triggered by the same **DISABLE Selected** button as everything else — there is no separate "Install" button. Ticking Open-Shell or any classic app and then clicking DISABLE Selected will run the install as part of that pass. If you only want to install classic apps without changing any privacy/AI settings, uncheck every other category first.
+
 | Method | What it does | Legal posture | Offline? |
 |---|---|---|---|
 | **Skip** | Default. Does nothing. | — | ✅ |
@@ -258,6 +262,15 @@ The GUI has a dedicated section with 5 radio buttons — pick one method, then t
 | **Source Redist Local** | Same, but fully offline — requires pre-staged `RemoveWindowsAi.ps1` + `ClassicApps/` folder next to `Tidy11.ps1`. Fails fast if missing. | ⚠️ Gray — same concern, you host the files | ✅ (after staging) |
 
 Recommendation for enterprise: **Winget** or **Native**. Source Redist methods are for personal machines where you specifically want muscle-memory-identical classic binaries.
+
+### Optional: Open-Shell / Classic Start Menu
+
+The Apps list includes a separate **Open-Shell / Classic Start Menu** checkbox — **unticked by default**. [Open-Shell](https://github.com/Open-Shell/Open-Shell-Menu) is the community-maintained, freeware (MIT-licensed) successor to the discontinued Classic Shell project. It gives you a Win7/XP-style Start menu on Windows 11 without touching Microsoft binaries.
+
+- Always installed via winget (package ID `Open-Shell.Open-Shell-Menu`), regardless of the method radio button — because Open-Shell is third-party freeware and isn't shipped by Microsoft or by the Source Redist upstream.
+- Requires internet the first time (to let winget fetch the installer) unless winget already has it cached.
+- Leave it unticked if you are happy with the stock Windows 11 Start menu, or if you deploy via Intune/GPO to locked-down machines where installing third-party Start menu software is not allowed.
+- Uninstall later via **Settings → Apps → Installed apps → Open-Shell** or `winget uninstall Open-Shell.Open-Shell-Menu`. Tidy11's REVERT button will **not** remove it (same rule as the other classic apps).
 
 ---
 
