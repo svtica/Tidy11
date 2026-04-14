@@ -834,25 +834,47 @@ function Invoke-SourceRedistOneApp {
                 Write-OK "Source Redist Local: '$App' install step completed"
             }
         } else {
-            # Online - download upstream script text and execute it as a scriptblock
-            # in this admin process. We do one app per invocation so each install runs
-            # cleanly and any failure is attributed to a specific app in the log.
+            # Online - download upstream script text to a temp file and run it as a
+            # CHILD powershell.exe. The upstream zoicware script is a top-level .ps1
+            # that contains 'exit' / 'return' statements at script scope; if we run it
+            # as an in-process scriptblock those exits will terminate the Tidy11 GUI
+            # process itself (observed: log stops mid-install, no further apps run,
+            # window closes silently). Spawning a child shell isolates that fully.
+            # We do one app per invocation so each install runs cleanly and any
+            # failure is attributed to a specific app in the log.
             $url = 'https://raw.githubusercontent.com/zoicware/RemoveWindowsAI/main/RemoveWindowsAi.ps1'
-            $scriptText = $null
+            $tmpFile = Join-Path $env:TEMP ("Tidy11_RemoveWindowsAi_{0}.ps1" -f ([Guid]::NewGuid().ToString('N')))
             try {
-                $scriptText = Invoke-RestMethod -Uri $url -UseBasicParsing -ErrorAction Stop
-            } catch {
-                Write-FAIL "Source Redist Online: failed to fetch upstream script: $($_.Exception.Message)"
-                return
+                # Force TLS 1.2 - older defaults still hit some Win11 builds and
+                # break the github.com download with a generic SSL error.
+                try {
+                    [System.Net.ServicePointManager]::SecurityProtocol =
+                        [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+                } catch {}
+
+                try {
+                    Invoke-WebRequest -Uri $url -OutFile $tmpFile -UseBasicParsing -ErrorAction Stop
+                } catch {
+                    Write-FAIL "Source Redist Online: failed to download upstream script: $($_.Exception.Message)"
+                    return
+                }
+                if (-not (Test-Path -LiteralPath $tmpFile) -or ((Get-Item -LiteralPath $tmpFile).Length -eq 0)) {
+                    Write-FAIL "Source Redist Online: downloaded upstream script is empty"
+                    return
+                }
+
+                & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmpFile `
+                    -nonInteractive -InstallClassicApps $App *>&1 |
+                    ForEach-Object { Write-Log "$_" 'REDIST' }
+
+                if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+                    Write-FAIL "Source Redist Online: upstream script exited with code $LASTEXITCODE for '$App'"
+                } else {
+                    Write-OK "Source Redist Online: '$App' install step completed"
+                }
+            } finally {
+                Remove-Item -LiteralPath $tmpFile -Force -ErrorAction SilentlyContinue
             }
-            if ([string]::IsNullOrWhiteSpace($scriptText)) {
-                Write-FAIL "Source Redist Online: upstream script body was empty"
-                return
-            }
-            $upstream = [scriptblock]::Create($scriptText)
-            & $upstream -nonInteractive -InstallClassicApps $App *>&1 |
-                ForEach-Object { Write-Log "$_" 'REDIST' }
-            Write-OK "Source Redist Online: '$App' install step completed"
         }
     } catch {
         Write-FAIL "Source Redist ($Source) failed for '$App': $($_.Exception.Message)"

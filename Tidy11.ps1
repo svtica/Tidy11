@@ -22,23 +22,65 @@
 
 #Requires -Version 5.1
 
-# -------------------- elevation --------------------
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-          ).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-    Start-Process powershell.exe -Verb RunAs -ArgumentList @(
-        '-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$PSCommandPath`""
-    )
-    exit
+# -------------------- environment detection + relaunch --------------------
+# Tidy11 must run as Administrator AND inside Windows PowerShell 5.1
+# (powershell.exe), because its WPF GUI relies on the PresentationFramework
+# stack that is only fully wired up in classic PowerShell.
+#
+# We unify "wrong host" and "not admin" into a single relaunch path so the user
+# never gets a silent no-op from PS 7 or a child window that closes instantly
+# because the system execution policy is still Restricted. We always:
+#   * target the absolute path of Windows PowerShell 5.1
+#   * pass -ExecutionPolicy Bypass (per-process, not persisted)
+#   * print clear console feedback so the launching shell shows what's happening
+$script:IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+                  ).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')
+$script:IsPS7   = $PSVersionTable.PSVersion.Major -ge 7
+
+if ($script:IsPS7 -or -not $script:IsAdmin) {
+    $winPS = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    if (-not (Test-Path -LiteralPath $winPS)) {
+        Write-Host ''
+        Write-Host '  Tidy11 needs Windows PowerShell 5.1 (powershell.exe) but it is not installed on this system.' -ForegroundColor Red
+        Write-Host '  Expected at: ' -NoNewline -ForegroundColor Red
+        Write-Host $winPS -ForegroundColor Yellow
+        Write-Host '  Tidy11 cannot run on a system where the classic Windows PowerShell host has been removed.' -ForegroundColor Red
+        Write-Host ''
+        if ([Environment]::UserInteractive) { Read-Host '  Press Enter to close' | Out-Null }
+        exit 1
+    }
+
+    $reasons = @()
+    if ($script:IsPS7)        { $reasons += "PowerShell $($PSVersionTable.PSVersion) detected (WPF XAML requires Windows PowerShell 5.1)" }
+    if (-not $script:IsAdmin) { $reasons += 'elevation required (must run as Administrator)' }
+    Write-Host ''
+    Write-Host '  Tidy11: ' -NoNewline -ForegroundColor Cyan
+    Write-Host 'relaunching via Windows PowerShell 5.1' -ForegroundColor White
+    foreach ($r in $reasons) { Write-Host "    - $r" -ForegroundColor DarkGray }
+    if (-not $script:IsAdmin) {
+        Write-Host '    A UAC prompt will appear - click Yes to continue.' -ForegroundColor DarkGray
+    }
+    Write-Host ''
+
+    $procArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$PSCommandPath`"")
+    try {
+        if ($script:IsAdmin) {
+            Start-Process -FilePath $winPS -ArgumentList $procArgs -ErrorAction Stop | Out-Null
+        } else {
+            Start-Process -FilePath $winPS -Verb RunAs -ArgumentList $procArgs -ErrorAction Stop | Out-Null
+        }
+    } catch {
+        Write-Host "  Failed to relaunch Tidy11 in Windows PowerShell 5.1: $($_.Exception.Message)" -ForegroundColor Red
+        if ([Environment]::UserInteractive) { Read-Host '  Press Enter to close' | Out-Null }
+        exit 1
+    }
+    exit 0
 }
 
-# -------------------- PS 5.1 check --------------------
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    Add-Type -AssemblyName System.Windows.Forms
-    [System.Windows.Forms.MessageBox]::Show(
-        "This tool must run in Windows PowerShell 5.1 (powershell.exe), not pwsh $($PSVersionTable.PSVersion).",
-        'Wrong PowerShell','OK','Error') | Out-Null
-    exit 1
-}
+# Belt-and-suspenders: even when invoked directly with the right host + admin,
+# clamp this process to Bypass so any child shell-outs do not fail on a
+# Restricted system policy.
+try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue } catch {}
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
