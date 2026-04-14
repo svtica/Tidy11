@@ -16,6 +16,20 @@ No runtime network dependency. No telemetry of its own. No code you can't read.
 
 ---
 
+## Disclaimer — read before running
+
+**Tidy11 is intended for power users who know what they are doing.** It makes deep changes to Windows policy, services, scheduled tasks, firewall rules, and Appx packages. If you don't understand what a setting does, read [`Tidy11-Changes-Reference.md`](Tidy11-Changes-Reference.md) first, or don't tick that box.
+
+- **No warranty.** This software is provided **as is**, without warranty of any kind, express or implied. You run it at your own risk.
+- **No support.** There is no help desk, no SLA, no guarantee that issues will be answered or fixed. The GitHub issue tracker is not monitored — **do not open issues**; they will not be triaged.
+- **Tested to the author's satisfaction.** I have used Tidy11 on my own machines and fixed every bug I encountered. Any remaining bugs are ones I did not hit. Your environment may differ.
+- **Use the safety net.** Both the Windows System Restore point and the Tidy11 snapshot options are ticked by default for a reason — leave them ticked. If something breaks, you have three independent rollback paths (see [Safety model](#safety-model)).
+- **Review before you deploy.** Read the source. Test on one machine before rolling to a fleet. Read the [Caveats](#caveats) section.
+
+If any of the above is a dealbreaker for you, don't use Tidy11.
+
+---
+
 ## Features
 
 - **Copilot / AI removal**: Windows Copilot, Recall, Click To Do, Paint AI, Edge Copilot, Office Copilot, Notepad AI, Voice Access, generative-AI app privacy gates.
