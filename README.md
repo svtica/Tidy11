@@ -303,11 +303,3 @@ Tidy11 is released under the **GNU General Public License v3.0 or later**. See [
 This license is inherited from `sevsec/windows-11-privacy`, whose code Tidy11 derives from. GPL-3.0 is a copyleft license: you are free to use, study, modify, and redistribute Tidy11 (including for commercial purposes), but any redistribution — including derivative works — must also be made available under GPL-3.0 and must include source code.
 
 In short: use it, change it, share it, build on it. Just don't lock it up.
-
----
-
-## Author
-
-**svtica** — [https://github.com/svtica/Tidy11](https://github.com/svtica/Tidy11)
-
-Issues and pull requests welcome.
