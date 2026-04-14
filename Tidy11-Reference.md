@@ -201,13 +201,19 @@ Disables Bing Search, Cortana consent, web search policy, search-box suggestions
 
 | Method | Risk | Notes |
 |---|---|---|
-| **Skip** | 🟢 | Default. No-op. |
+| **Skip** | 🟢 | Default. No-op for Microsoft-sourced apps. Open-Shell can still install in this mode (it's independent of the method). |
 | **Winget** | 🟢 | Installs Notepad++, Paint.NET, ShareX, IrfanView. Cleanest legal path. |
 | **Native** | 🟢 | Classic Notepad (FoD), Photo Viewer (registry restore), Photos Legacy (Store). For Paint/Snipping: installs the modern UWP Microsoft Store builds (`9PCFS5B6T72H` / `9MZ95KL8MR0L`) — **not** the classic Win32 binaries. Use Source Redist if you need the classic ones. |
 | **Source Redist Online** | 🟡 | Fetches `zoicware/RemoveWindowsAI` at runtime and runs `-InstallClassicApps` once per selected app. Redistributes Microsoft binaries (gray legal zone). Needs internet. |
 | **Source Redist Local** | 🟡 | Same legal posture, fully offline — requires pre-staged `RemoveWindowsAi.ps1` + `ClassicApps/` folder next to `Tidy11.ps1`. Fails fast if missing. |
 
 Recommendation for enterprise: **Winget** or **Native**. Source Redist methods are for personal machines where you specifically want classic Win10 binaries.
+
+### Open-Shell / Classic Start Menu (opt-in)
+
+| Checkbox | Default | Risk | Notes |
+|---|---|---|---|
+| `cbAppClassicShell` | **OFF** | 🟢 | Installs [Open-Shell](https://github.com/Open-Shell/Open-Shell-Menu) via winget (`Open-Shell.Open-Shell-Menu`). Community-maintained, MIT-licensed successor to the discontinued Classic Shell / Classic Start Menu. Win7/XP-style Start menu for Windows 11. Always installs via winget regardless of the selected method radio button — it is not a Microsoft app and is not in the Source Redist payload. Needs internet unless winget has it cached. Uninstall via Settings → Apps or `winget uninstall Open-Shell.Open-Shell-Menu`. |
 
 ---
 

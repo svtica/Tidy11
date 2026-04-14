@@ -201,9 +201,12 @@ Import-Module $modulePath -Force -DisableNameChecking
                         <CheckBox Name="cbAppSnip"        Content="Classic Snipping Tool"/>
                         <CheckBox Name="cbAppPhoto"       Content="Classic Windows Photo Viewer"/>
                         <CheckBox Name="cbAppPhotosLeg"   Content="Photos Legacy (from Microsoft Store)"/>
+                        <CheckBox Name="cbAppClassicShell" Content="Open-Shell / Classic Start Menu (freeware, MIT) - off by default" IsChecked="False"/>
 
-                        <TextBlock TextWrapping="Wrap" Margin="8,6,8,2" FontSize="10" Foreground="#888"
-                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Source Redist options install true Win10 binaries but redistribute Microsoft copyrights - use at your discretion."/>
+                        <TextBlock TextWrapping="Wrap" Margin="8,6,8,2" FontSize="10" Foreground="#ffcc66"
+                                   Text="Note: classic-app installs (including Open-Shell) run as part of the DISABLE Selected pass - the same button that disables AI/telemetry. REVERT Selected will NOT uninstall them (manual uninstall via Settings or winget)."/>
+                        <TextBlock TextWrapping="Wrap" Margin="8,2,8,2" FontSize="10" Foreground="#888"
+                                   Text="Winget = best legal posture, modern replacements. Native = Microsoft's own sources; Paint/Snipping not available this way. Source Redist options install true Win10 binaries but redistribute Microsoft copyrights - use at your discretion. Open-Shell (Classic Shell successor) is always installed via winget - it is third-party freeware."/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
@@ -299,7 +302,7 @@ $cb = @{}
     'cbTaskbar','cbPerf','cbEdgeDebloat','cbOfficeTelem',
     # Classic apps - method radios + app checkboxes
     'rbMethodSkip','rbMethodWinget','rbMethodNative','rbMethodRedistOn','rbMethodRedistLoc',
-    'cbAppNotepad','cbAppPaint','cbAppSnip','cbAppPhoto','cbAppPhotosLeg',
+    'cbAppNotepad','cbAppPaint','cbAppSnip','cbAppPhoto','cbAppPhotosLeg','cbAppClassicShell',
     # Config / Snapshot
     'cbSystemRestore','cbAutoSnapshot','btnSaveConfig','btnLoadConfig','btnRestoreSnap',
     # Buttons + log
@@ -513,13 +516,18 @@ $runAction = {
             elseif ($cb.rbMethodRedistLoc.IsChecked) { $method = 'SourceRedistLocal' }
 
             $apps = @()
-            if ($cb.cbAppNotepad.IsChecked)   { $apps += 'notepad' }
-            if ($cb.cbAppPaint.IsChecked)     { $apps += 'mspaint' }
-            if ($cb.cbAppSnip.IsChecked)      { $apps += 'snippingtool' }
-            if ($cb.cbAppPhoto.IsChecked)     { $apps += 'photoviewer' }
-            if ($cb.cbAppPhotosLeg.IsChecked) { $apps += 'photoslegacy' }
+            if ($cb.cbAppNotepad.IsChecked)      { $apps += 'notepad' }
+            if ($cb.cbAppPaint.IsChecked)        { $apps += 'mspaint' }
+            if ($cb.cbAppSnip.IsChecked)         { $apps += 'snippingtool' }
+            if ($cb.cbAppPhoto.IsChecked)        { $apps += 'photoviewer' }
+            if ($cb.cbAppPhotosLeg.IsChecked)    { $apps += 'photoslegacy' }
+            if ($cb.cbAppClassicShell.IsChecked) { $apps += 'classicshell' }
 
-            if ($method -ne 'Skip' -and $apps.Count -gt 0) {
+            # Call into Invoke-ClassicApps whenever anything is ticked. It
+            # internally handles Method=Skip (no-op for MS-sourced apps) and
+            # the classicshell special case (always via winget regardless of
+            # method), so this single entry point covers every combination.
+            if ($apps.Count -gt 0) {
                 Invoke-ClassicApps -Method $method -Apps $apps -LocalPath $PSScriptRoot
             }
         }
@@ -554,8 +562,18 @@ $cb.btnDisable.Add_Click({
             return
         }
     }
+    # If the user ticked anything in the Classic Apps section, warn them that
+    # DISABLE Selected is also what installs those - the button label is
+    # biased toward the main (disable) use case, but the same pass installs
+    # classic apps. This is a common source of confusion the first time.
+    $anyClassicApp = ($cb.cbAppNotepad.IsChecked    -or $cb.cbAppPaint.IsChecked   -or
+                      $cb.cbAppSnip.IsChecked       -or $cb.cbAppPhoto.IsChecked   -or
+                      $cb.cbAppPhotosLeg.IsChecked  -or $cb.cbAppClassicShell.IsChecked)
+    $classicNote = if ($anyClassicApp) {
+        "`n`nNote: one or more classic apps are ticked - they will be INSTALLED in the same pass (DISABLE Selected is also the install trigger)."
+    } else { '' }
     $r = [System.Windows.MessageBox]::Show(
-        "This will disable/remove the selected categories across Windows 11 and Microsoft 365.`n`nProceed?",
+        "This will disable/remove the selected categories across Windows 11 and Microsoft 365." + $classicNote + "`n`nProceed?",
         "Confirm DISABLE", 'YesNo', 'Warning')
     if ($r -eq 'Yes') { & $runAction $false }
 })
