@@ -190,7 +190,7 @@ Items are grouped by category. Full per-setting reference with registry paths an
 | **Windows Copilot** | `TurnOffWindowsCopilot` policy, Copilot Appx package (optional), taskbar button, hardware Copilot key, AppPrivacy generative-AI access |
 | **Recall / WindowsAI** | `DisableAIDataAnalysis`, `AllowRecallEnablement=0`, Click To Do, Settings Agent, Agent Connectors/Workspaces |
 | **Paint AI** | Cocreator, Generative Fill/Erase, Image Creator, Remove Background |
-| **Edge** | Copilot sidebar, Compose inline, AI themes, History AI search, startup boost, background mode |
+| **Edge** | Copilot sidebar, Compose inline, AI themes, History AI search, startup boost, background mode. Optional opt-in: lock the default search engine to **DuckDuckGo** instead of Bing. |
 | **Office Copilot** | HKLM master policy + per-user Word/Excel/PPT/OneNote/Outlook toggles + Outlook BusinessChat add-in |
 | **Notepad AI** | `CopilotEnabled`, `AIFeaturesEnabled`, `ShowAIFeatures` |
 | **Telemetry** | DiagTrack service, dmwappushservice, 6 scheduled task paths, outbound FQDN firewall blocks (v10.events, settings-win, vortex-win), `AllowTelemetry`, Advertising ID, Windows Error Reporting |

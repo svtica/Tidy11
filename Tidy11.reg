@@ -116,6 +116,19 @@ Windows Registry Editor Version 5.00
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\copilot]
 "disablecopilot"=dword:00000001
 
+; ---------- Edge default search engine = DuckDuckGo (OPTIONAL — replaces Bing) ----------
+; Opinionated UX change. Uncomment to set DuckDuckGo as the locked default
+; search provider in Microsoft Edge. Removing the values lets Edge return to
+; the Bing default. Reference:
+;   https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#default-search-provider
+;[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge]
+;"DefaultSearchProviderEnabled"=dword:00000001
+;"DefaultSearchProviderName"="DuckDuckGo"
+;"DefaultSearchProviderKeyword"="duckduckgo.com"
+;"DefaultSearchProviderSearchURL"="https://duckduckgo.com/?q={searchTerms}"
+;"DefaultSearchProviderSuggestURL"="https://duckduckgo.com/ac/?q={searchTerms}&type=list"
+;"DefaultSearchProviderIconURL"="https://duckduckgo.com/favicon.ico"
+
 ; ---------- Microsoft Account block (NON-STRICT, value=1) ----------
 ; Use value=3 for strict. Uncomment if desired.
 ;[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]

@@ -189,13 +189,34 @@ Disables Bing Search, Cortana consent, web search policy, search-box suggestions
 
 ---
 
-## 16. Office telemetry (`Invoke-OfficeTelemetry`) 🟢
+## 16. Edge default search engine = DuckDuckGo (`Invoke-EdgeDuckDuckGoSearch`) 🟢
+
+GUI: *Edge default search engine = DuckDuckGo (replaces Bing) — opt-in*. **Unticked by default.** Not part of SAFE / EXTENDED presets; the FULL preset does include it.
+
+Sets six values under `HKLM\SOFTWARE\Policies\Microsoft\Edge` so Edge ships every search query to DuckDuckGo instead of Bing. Once these policy values are present, the user cannot change the default search engine from Edge's own settings — they have to be cleared (or the GUI's REVERT pass run) first.
+
+| Setting | Reg value | Default → Tidy11 | Risk | Reversible |
+|---|---|---|---|---|
+| Lock default search provider | `DefaultSearchProviderEnabled` | (absent) → `1` | 🟢 | Snapshot ⚠ |
+| Provider name | `DefaultSearchProviderName` | (absent) → `DuckDuckGo` | 🟢 | Snapshot ⚠ |
+| Address-bar keyword | `DefaultSearchProviderKeyword` | (absent) → `duckduckgo.com` | 🟢 | Snapshot ⚠ |
+| Search URL | `DefaultSearchProviderSearchURL` | (absent) → `https://duckduckgo.com/?q={searchTerms}` | 🟢 | Snapshot ⚠ |
+| Suggestions URL | `DefaultSearchProviderSuggestURL` | (absent) → `https://duckduckgo.com/ac/?q={searchTerms}&type=list` | 🟢 | Snapshot ⚠ |
+| Provider icon | `DefaultSearchProviderIconURL` | (absent) → `https://duckduckgo.com/favicon.ico` | 🟢 | Snapshot ⚠ |
+
+REVERT deletes all six values — Edge then returns to its built-in Bing default. The same toggle exists as a commented-out block in `Tidy11.reg` and `Tidy11-Revert.reg` for GPO deployments.
+
+Reference: [Microsoft Edge default-search-provider policies](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#default-search-provider).
+
+---
+
+## 17. Office telemetry (`Invoke-OfficeTelemetry`) 🟢
 
 `HKCU\…\Office\16.0\Common\Privacy!DisconnectedState=2`, `…\Office\Common\ClientTelemetry!DisableTelemetry=1`. Fully reversible.
 
 ---
 
-## 17. Classic App Replacements (`Invoke-ClassicApps`)
+## 18. Classic App Replacements (`Invoke-ClassicApps`)
 
 **Revert is manual** — the REVERT button does NOT uninstall apps Tidy11 installed.
 

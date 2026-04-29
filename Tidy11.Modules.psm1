@@ -610,6 +610,36 @@ function Invoke-EdgeDebloat {
     Invoke-Safely { Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'BackgroundModeEnabled'  'DWord' $v } "Edge background mode"
 }
 
+# ============================================================================
+#  Edge default search engine = DuckDuckGo (replaces Bing)
+#  Opt-in. Machine-wide policy under HKLM\SOFTWARE\Policies\Microsoft\Edge.
+#  Reference: https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#default-search-provider
+# ============================================================================
+function Invoke-EdgeDuckDuckGoSearch {
+    param([bool]$Revert)
+    $edgeKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
+    $names = @(
+        'DefaultSearchProviderEnabled'
+        'DefaultSearchProviderName'
+        'DefaultSearchProviderKeyword'
+        'DefaultSearchProviderSearchURL'
+        'DefaultSearchProviderSuggestURL'
+        'DefaultSearchProviderIconURL'
+    )
+    if ($Revert) {
+        foreach ($n in $names) {
+            Invoke-Safely { Remove-RegValue $edgeKey $n } "Cleared $n (Edge default search returns to Bing)"
+        }
+    } else {
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderEnabled'    'DWord'  1                                                          } "Edge default search provider enabled"
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderName'       'String' 'DuckDuckGo'                                               } "Edge search provider name = DuckDuckGo"
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderKeyword'    'String' 'duckduckgo.com'                                           } "Edge search provider keyword"
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderSearchURL'  'String' 'https://duckduckgo.com/?q={searchTerms}'                  } "Edge search URL = DuckDuckGo"
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderSuggestURL' 'String' 'https://duckduckgo.com/ac/?q={searchTerms}&type=list'     } "Edge suggest URL = DuckDuckGo"
+        Invoke-Safely { Set-Reg $edgeKey 'DefaultSearchProviderIconURL'    'String' 'https://duckduckgo.com/favicon.ico'                       } "Edge search provider icon"
+    }
+}
+
 function Invoke-OfficeTelemetry {
     param([bool]$Revert)
     if ($Revert) {
