@@ -224,6 +224,7 @@ Import-Module $modulePath -Force -DisableNameChecking
                         <CheckBox Name="cbTaskbar"        Content="Taskbar cleanup (left align, hide Task View/Chat/People)" IsChecked="True"/>
                         <CheckBox Name="cbPerf"           Content="Performance tweaks (menu/startup delay)" IsChecked="True"/>
                         <CheckBox Name="cbEdgeDebloat"    Content="Edge first-run/startup boost/background" IsChecked="True"/>
+                        <CheckBox Name="cbEdgeDdg"        Content="Edge default search engine = DuckDuckGo (replaces Bing) - opt-in" IsChecked="False"/>
                         <CheckBox Name="cbOfficeTelem"    Content="Office telemetry / connected experiences" IsChecked="True"/>
                     </StackPanel>
                 </GroupBox>
@@ -299,7 +300,7 @@ $cb = @{}
     'cbTelemetry','cbAds','cbMSA','cbMSAStrict','cbActLoc',
     # System cleanup
     'cbXbox','cbGameDVR','cbWidgets','cbContextMenu','cbWebSearch',
-    'cbTaskbar','cbPerf','cbEdgeDebloat','cbOfficeTelem',
+    'cbTaskbar','cbPerf','cbEdgeDebloat','cbEdgeDdg','cbOfficeTelem',
     # Classic apps - method radios + app checkboxes
     'rbMethodSkip','rbMethodWinget','rbMethodNative','rbMethodRedistOn','rbMethodRedistLoc',
     'cbAppNotepad','cbAppPaint','cbAppSnip','cbAppPhoto','cbAppPhotosLeg','cbAppClassicShell',
@@ -505,6 +506,7 @@ $runAction = {
         if ($cb.cbTaskbar.IsChecked)       { Invoke-TaskbarTweaks     -Revert $isRevert }
         if ($cb.cbPerf.IsChecked)          { Invoke-PerformanceTweaks -Revert $isRevert }
         if ($cb.cbEdgeDebloat.IsChecked)   { Invoke-EdgeDebloat       -Revert $isRevert }
+        if ($cb.cbEdgeDdg.IsChecked)       { Invoke-EdgeDuckDuckGoSearch -Revert $isRevert }
         if ($cb.cbOfficeTelem.IsChecked)   { Invoke-OfficeTelemetry   -Revert $isRevert }
 
         # --- wrapper extras ---

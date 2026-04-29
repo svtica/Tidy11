@@ -111,6 +111,17 @@ Windows Registry Editor Version 5.00
 ; ---------- Microsoft 365 Office Copilot (machine-wide master toggle) ----------
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\copilot]
 
+; ---------- Edge default search engine (if you uncommented the DuckDuckGo block in Tidy11.reg) ----------
+; Deletes the DefaultSearchProvider* values so Edge returns to its Bing default.
+; Other Edge policies stay put.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge]
+"DefaultSearchProviderEnabled"=-
+"DefaultSearchProviderName"=-
+"DefaultSearchProviderKeyword"=-
+"DefaultSearchProviderSearchURL"=-
+"DefaultSearchProviderSuggestURL"=-
+"DefaultSearchProviderIconURL"=-
+
 ; ---------- Microsoft Account block (if you uncommented these in Tidy11.reg) ----------
 [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
 "NoConnectedUser"=-
